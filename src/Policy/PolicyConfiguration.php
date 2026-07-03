@@ -14,6 +14,8 @@ final readonly class PolicyConfiguration
 {
     /**
      * @param array<string, PolicyMode> $modes
+     * @param string[] $scanPaths
+     * @param string[] $migrationPaths
      * @param string[] $ignoredPaths
      * @param array<string, true> $ignoredTables
      * @param array<string, true> $ignoredColumns
@@ -23,6 +25,8 @@ final readonly class PolicyConfiguration
      */
     private function __construct(
         private array $modes,
+        private array $scanPaths,
+        private array $migrationPaths,
         private array $ignoredPaths,
         private array $ignoredTables,
         private array $ignoredColumns,
@@ -54,6 +58,8 @@ final readonly class PolicyConfiguration
 
         return new self(
             $modes,
+            self::stringList(self::arrayValue($config, 'scan_paths'), 'Configured scan paths must be strings.'),
+            self::stringList(self::arrayValue($config, 'migration_paths'), 'Configured migration paths must be strings.'),
             self::stringList(self::arrayValue($config, 'ignore_paths')),
             self::stringSet(self::arrayValue(self::arrayValue($config, 'ignore'), 'tables')),
             self::stringSet(self::arrayValue(self::arrayValue($config, 'ignore'), 'columns')),
@@ -63,8 +69,24 @@ final readonly class PolicyConfiguration
             (bool) ($policy['escalate_exposed_to_block'] ?? false),
             self::parseConfidence((string) ($policy['block_confidence_floor'] ?? 'high')),
             (bool) ($exitCodes['treat_warnings_as_failure'] ?? false),
-            (int) ($exitCodes['warning_exit_code'] ?? 0),
+            self::parseExitCode($exitCodes['warning_exit_code'] ?? 0),
         );
+    }
+
+    /**
+     * @return string[]
+     */
+    public function scanPaths(): array
+    {
+        return $this->scanPaths;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function migrationPaths(): array
+    {
+        return $this->migrationPaths;
     }
 
     public function isIgnored(string|SchemaChangeEvent $target): bool
@@ -314,15 +336,29 @@ final readonly class PolicyConfiguration
      *
      * @return string[]
      */
-    private static function stringList(array $values): array
+    private static function stringList(array $values, string $message = 'Configured ignore paths must be strings.'): array
     {
         foreach ($values as $value) {
             if (! is_string($value)) {
-                throw new ConfigurationException('Configured ignore paths must be strings.');
+                throw new ConfigurationException($message);
             }
         }
 
         return array_values($values);
+    }
+
+    private static function parseExitCode(mixed $value): int
+    {
+        if (! is_int($value) && ! (is_string($value) && preg_match('/^\d+$/', $value) === 1)) {
+            throw new ConfigurationException('Configured warning exit code must be an integer between 0 and 255.');
+        }
+
+        $exitCode = (int) $value;
+        if ($exitCode < 0 || $exitCode > 255) {
+            throw new ConfigurationException('Configured warning exit code must be an integer between 0 and 255.');
+        }
+
+        return $exitCode;
     }
 
     /**

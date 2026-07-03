@@ -8,14 +8,14 @@ Read this for phase boundaries, parser guarantees, migration extraction, usage s
 - P2 Migration Extraction: Implemented and verified.
 - P3 AST Discovery: Implemented and verified.
 - P4 Graph + Policy: Implemented and verified.
-- P5 CLI + Pipeline: Planned - not implemented.
+- P5 CLI + Pipeline: Implemented and verified.
 - P6 Robustness: Planned - not implemented.
 
 Exact current boundary:
 
 ```text
-Phase 1, Phase 2, Phase 3, and Phase 4 are acceptance-verified.
-Phase 5 has not started.
+Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 are acceptance-verified.
+Phase 6 has not started.
 ```
 
 ## Current Extraction Flow
@@ -77,6 +77,27 @@ SchemaChangeEvent[] + Usage[] + RouteBinding[]
 
 Phase 4 route discovery is static AST route-file scanning only. It produces `RouteBinding[]` for graph building and does not execute Laravel routes.
 
+## Current CLI Flow
+
+Status: Implemented and verified.
+
+```text
+schemaguard:check
+  -> AnalysisRequest
+  -> AnalysisPipeline
+  -> MigrationDiscovery
+  -> MigrationParser
+  -> CodebaseIndexer
+  -> StaticAnalysisScanner
+  -> RouteVisitor
+  -> DependencyGraphBuilder
+  -> PolicyEngine
+  -> ConsoleReporter
+  -> ExitCodeResolver
+```
+
+The command now supports explicit migrations, Git diff migration discovery, path overrides, console output, JSON output, strict warning handling, and the `--no-cache` contract flag. No AST cache exists yet; `useCache=false` is represented for Phase 6 without adding cache behavior.
+
 ## Current Parser Guarantees
 
 Status: Implemented and verified.
@@ -127,27 +148,40 @@ Evidence: Phase 4 graph, route, and policy tests.
 - Override precedence is ignore, enforce, per-type mode, then custom rule.
 - `PolicyConfiguration` validates enum-like config and throws `ConfigurationException` on invalid modes.
 
-## Current Phase 4 Non-Goals
+## Current CLI Guarantees
+
+Status: Implemented and verified.
+
+Evidence: Phase 5 pipeline, output, and feature tests.
+
+- `AnalysisRequest` validates CLI options and rejects conflicting `--diff` plus `--migrations`.
+- `MigrationDiscovery` supports pending, explicit, and local Git diff strategies.
+- `AnalysisPipeline` short-circuits before indexing when there are no destructive events.
+- Missing scan roots fail clearly with `CodebaseScanException`.
+- Explicit `--path` scan roots are authoritative and are not filtered out by configured ignore globs.
+- Route scanning reuses indexed ASTs.
+- `ConsoleReporter` renders console reports and strict JSON output.
+- `ExitCodeResolver` maps SAFE/WARNING/BLOCK to CI exit codes without making policy decisions.
+- JSON mode emits one JSON document and no progress output.
+
+## Current Phase 5 Non-Goals
 
 Status: Planned - not implemented.
 
 - Raw SQL visitor.
-- CLI pipeline.
-- Console reporter.
-- Exit-code resolver.
-- JSON output.
-- Git diff migration discovery implementation.
 - AST cache.
+- Raw SQL scanning.
+- Golden-file E2E tests.
+- Hosted PR checks.
+- SaaS/dashboard work.
 
 ## Do Not Accidentally Pull These Features Forward
 
-Do not sneak these into Phase 4 maintenance tasks:
+Do not sneak these into Phase 5 maintenance tasks:
 
-- Full analysis pipeline.
-- Enhanced CLI options.
-- Console reporter.
-- Exit-code resolver.
-- JSON output.
-- Git diff migration discovery implementation.
 - Raw SQL visitor.
-- Caching and Phase 6 robustness work.
+- AST cache.
+- Raw SQL scanning.
+- Complex relationship and dynamic-attribute Phase 6 hardening.
+- Golden-file E2E gates.
+- Hosted integrations or dashboard work.

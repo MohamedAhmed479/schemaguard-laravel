@@ -21,8 +21,8 @@ Read this before running validation or declaring a task complete. Skip it only f
 
 | Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
 | --- | --- | --- | --- | --- |
-| `vendor/bin/phpunit tests/Feature/CheckCommandTest.php` | Command/provider/config changes. | Command registration, config merge, banner, exit 0. | Test passes. | Yes for Phase 1 changes. |
-| `vendor/bin/testbench schemaguard:check` | Command integration changes. | Testbench can run the package command. | Prints Deployment Firewall scaffold output. | Yes for command changes. |
+| `vendor/bin/phpunit tests/Feature/CheckCommandTest.php` | Command/provider/config changes. | Current command integration, including real Phase 5 pipeline behavior. | Test passes. | Yes for command changes. |
+| `vendor/bin/testbench schemaguard:check` | Command integration changes. | Testbench can run the package command. | Prints a real Deployment Firewall result; with no migrations it is `RESULT: SAFE`. | Yes for command changes. |
 | `vendor/bin/testbench vendor:publish --tag=schemaguard-config --force` | Config/provider publishing changes. | Package config publishes in Testbench. | `schemaguard.php` copied. | Yes for config/provider changes. |
 
 ## Phase 2 Commands
@@ -30,7 +30,7 @@ Read this before running validation or declaring a task complete. Skip it only f
 | Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
 | --- | --- | --- | --- | --- |
 | `vendor/bin/phpunit --filter MigrationParserTest` | Parser or fixture changes. | Destructive event extraction, diagnostics, false-positive guards, and Phase 3 type changes. | Parser tests pass. | Yes for parser changes. |
-| `vendor/bin/phpunit --filter MigrationDiscoveryTest` | Discovery/path behavior changes. | Explicit/pending discovery, sorting, non-PHP filtering, Git diff rejection. | Discovery tests pass. | Yes for discovery changes. |
+| `vendor/bin/phpunit --filter MigrationDiscoveryTest` | Discovery/path behavior changes. | Explicit/pending discovery, sorting, non-PHP filtering, and Phase 5 Git diff behavior. | Discovery tests pass. | Yes for discovery changes. |
 
 ## Phase 3 Commands
 
@@ -55,11 +55,24 @@ Read this before running validation or declaring a task complete. Skip it only f
 | `vendor/bin/phpunit --filter PolicyConfigurationTest` | Policy config changes. | Typed config parsing and invalid config failures. | Config tests pass. | Yes for policy config changes. |
 | `vendor/bin/phpunit --filter PolicyEngineTest` | Policy engine changes. | Full decision matrix, override precedence, exposure escalation, confidence floor, diagnostics. | Policy tests pass. | Yes for policy changes. |
 
+## Phase 5 Commands
+
+| Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
+| --- | --- | --- | --- | --- |
+| `vendor/bin/phpunit --filter AnalysisRequestTest` | CLI option/request changes. | Request defaults, source selection, format validation, strict/no-cache, conflict handling. | Request tests pass. | Yes for request changes. |
+| `vendor/bin/phpunit --filter AnalysisPipelineTest` | Pipeline changes. | No-event short-circuit, indexing/scanning orchestration, diagnostics, missing scan roots, progress callback. | Pipeline tests pass. | Yes for pipeline changes. |
+| `vendor/bin/phpunit --filter MigrationDiscoveryTest` | Discovery changes. | Explicit/pending/Git diff discovery, sorting, filtering, failure handling. | Discovery tests pass. | Yes for discovery changes. |
+| `vendor/bin/phpunit --filter ExitCodeResolverTest` | Exit-code changes. | SAFE/WARNING/BLOCK CI code mapping. | Exit-code tests pass. | Yes for exit-code changes. |
+| `vendor/bin/phpunit --filter ConsoleReporterTest` | Reporter changes. | Console fragments, JSON schema, JSON fatal errors. | Reporter tests pass. | Yes for reporter changes. |
+| `vendor/bin/phpunit tests/Feature/CheckCommandTest.php` | CLI integration changes. | End-to-end command verdicts, JSON-only output, strict behavior, missing scan root errors. | Feature tests pass. | Yes for CLI changes. |
+| `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures` | Manual CLI verification. | Real Testbench command returns BLOCK for used dropped column. | Output includes `RESULT: BLOCK`; exit code is 1. | Yes before Phase 5 completion. |
+| `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures --format=json` | Manual JSON verification. | JSON mode emits machine-readable result. | Valid JSON with `overall=BLOCK`; exit code is 1. | Yes before Phase 5 completion. |
+
 ## Full Suite
 
 | Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
 | --- | --- | --- | --- | --- |
-| `vendor/bin/phpunit --testsuite Unit` | Any Phase 2/3/4 unit change. | All unit regressions remain green. | Unit suite passes. | Yes for Phase 2/3/4 source changes. |
+| `vendor/bin/phpunit --testsuite Unit` | Any Phase 2/3/4/5 unit change. | All unit regressions remain green. | Unit suite passes. | Yes for Phase 2/3/4/5 source changes. |
 | `vendor/bin/phpunit` | Any code/test change. | Full current package suite. | All tests pass. | Yes for code changes. |
 
 ## Troubleshooting

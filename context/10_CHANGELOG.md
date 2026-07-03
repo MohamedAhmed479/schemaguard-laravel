@@ -125,3 +125,48 @@ Verification evidence:
 - `vendor/bin/phpunit --filter PolicyConfigurationTest`
 - `vendor/bin/phpunit --filter PolicyEngineTest`
 - `vendor/bin/phpunit --testsuite Unit`
+
+## Phase 5 - Presentation & CLI
+
+Status: Implemented and verified.
+
+- Added immutable `AnalysisRequest`, migration source and output format enums.
+- Added `AnalysisPipeline`, `AnalysisRunResult`, and `AnalysisMetadata`.
+- Completed local Git diff migration discovery through a testable command-runner seam.
+- Added `CodebaseScanException` for missing scan roots.
+- Added CI `ExitCodeResolver`.
+- Replaced the scaffold command with the real `schemaguard:check` pipeline and options.
+- Added console reporting, JSON output, JSON fatal errors, and console-mode indexing progress.
+- Added feature tests for BLOCK, SAFE, WARNING, strict warnings, JSON-only output, and missing scan root failures.
+- Preserved Phase 6 boundaries: no raw SQL visitor, no AST cache, no hosted integrations.
+
+Verification evidence:
+
+- `vendor/bin/phpunit --filter AnalysisRequestTest`
+- `vendor/bin/phpunit --filter AnalysisPipelineTest`
+- `vendor/bin/phpunit --filter MigrationDiscoveryTest`
+- `vendor/bin/phpunit --filter ExitCodeResolverTest`
+- `vendor/bin/phpunit --filter ConsoleReporterTest`
+- `vendor/bin/phpunit tests/Feature/CheckCommandTest.php`
+- `vendor/bin/phpunit --testsuite Unit`
+- `vendor/bin/phpunit`
+- `vendor/bin/testbench schemaguard:check`
+
+## Phase 5 - Acceptance Audit Corrections
+
+Status: Implemented and verified.
+
+- Strengthened CLI feature tests for console fatal errors and JSON SAFE/WARNING/fatal purity.
+- Strengthened pipeline tests to prove no-event runs do not emit indexing progress.
+- Strengthened Git diff discovery tests to prove deterministic sorting and filtering of returned paths.
+- Added container-resolution coverage for Phase 5 collaborators.
+- Changed default `enforce` config examples from active rules to commented examples so an unused destructive change is SAFE by default.
+
+Verification evidence:
+
+- `vendor/bin/phpunit --filter AnalysisPipelineTest`
+- `vendor/bin/phpunit --filter MigrationDiscoveryTest`
+- `vendor/bin/phpunit --filter PolicyConfigurationTest`
+- `vendor/bin/phpunit tests/Feature/CheckCommandTest.php`
+- `vendor/bin/phpunit --testsuite Unit`
+- `vendor/bin/phpunit`

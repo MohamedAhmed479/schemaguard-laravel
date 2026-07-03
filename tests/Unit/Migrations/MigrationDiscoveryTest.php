@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace SchemaGuard\Tests\Unit\Migrations;
 
-use BadMethodCallException;
 use Illuminate\Filesystem\Filesystem;
-use InvalidArgumentException;
+use SchemaGuard\Exceptions\ConfigurationException;
+use SchemaGuard\Migrations\GitCommandResult;
+use SchemaGuard\Migrations\GitCommandRunner;
 use SchemaGuard\Migrations\MigrationDiscovery;
 use SchemaGuard\Tests\TestCase;
 
@@ -52,6 +53,8 @@ final class MigrationDiscoveryTest extends TestCase
             $this->fixture('2024_06_12_000000_dynamic_rename.php'),
             $this->fixture('2024_06_13_000000_dynamic_table_drop.php'),
             $this->fixture('2024_06_14_000000_change_user_email_type_direct.php'),
+            $this->fixture('2024_06_15_000000_drop_unused_column_from_users.php'),
+            $this->fixture('2024_06_16_000000_change_user_phone_type.php'),
         ], $discovery->resolve());
     }
 
@@ -70,7 +73,7 @@ final class MigrationDiscoveryTest extends TestCase
     {
         $discovery = new MigrationDiscovery(new Filesystem());
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationException::class);
 
         $discovery->resolve([
             'migrations' => [
@@ -83,7 +86,7 @@ final class MigrationDiscoveryTest extends TestCase
     {
         $discovery = new MigrationDiscovery(new Filesystem());
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConfigurationException::class);
 
         $discovery->resolve([
             'migrations' => [
@@ -92,11 +95,47 @@ final class MigrationDiscoveryTest extends TestCase
         ]);
     }
 
-    public function test_git_diff_strategy_is_not_supported_until_phase_five(): void
+    public function test_git_diff_strategy_uses_safe_runner_and_filters_existing_php_migrations(): void
     {
-        $discovery = new MigrationDiscovery(new Filesystem());
+        $runner = new FakeGitCommandRunner(new GitCommandResult(
+            0,
+            implode("\n", [
+                'tests/Fixtures/migrations/2024_06_05_000000_drop_multi_columns.php',
+                'tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php',
+                'tests/Fixtures/migrations/not_a_migration.txt',
+                'tests/Fixtures/migrations/missing.php',
+            ]),
+            '',
+        ));
+        $discovery = new MigrationDiscovery(new Filesystem(), [
+            'migration_paths' => ['tests/Fixtures/migrations'],
+        ], $runner);
 
-        $this->expectException(BadMethodCallException::class);
+        $this->assertSame([
+            $this->fixture('2024_06_01_000000_drop_phone_from_users.php'),
+            $this->fixture('2024_06_05_000000_drop_multi_columns.php'),
+        ], $discovery->resolve(['strategy' => 'git_diff', 'base' => 'origin/main']));
+
+        $this->assertSame([
+            'git',
+            'diff',
+            '--name-only',
+            '--diff-filter=AM',
+            'origin/main',
+            '--',
+            'tests/Fixtures/migrations',
+        ], $runner->commands[0]);
+    }
+
+    public function test_git_diff_failure_throws_configuration_exception(): void
+    {
+        $runner = new FakeGitCommandRunner(new GitCommandResult(128, '', 'fatal: bad revision'));
+        $discovery = new MigrationDiscovery(new Filesystem(), [
+            'migration_paths' => ['tests/Fixtures/migrations'],
+        ], $runner);
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('bad revision');
 
         $discovery->resolve(['strategy' => 'git_diff']);
     }
@@ -109,5 +148,22 @@ final class MigrationDiscoveryTest extends TestCase
     private function fixturesPath(): string
     {
         return realpath(__DIR__ . '/../../Fixtures/migrations') ?: __DIR__ . '/../../Fixtures/migrations';
+    }
+}
+
+final class FakeGitCommandRunner implements GitCommandRunner
+{
+    /** @var array<int, string[]> */
+    public array $commands = [];
+
+    public function __construct(private readonly GitCommandResult $result)
+    {
+    }
+
+    public function run(array $command, string $cwd): GitCommandResult
+    {
+        $this->commands[] = $command;
+
+        return $this->result;
     }
 }

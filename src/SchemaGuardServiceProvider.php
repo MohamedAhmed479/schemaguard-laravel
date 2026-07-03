@@ -6,6 +6,10 @@ namespace SchemaGuard;
 
 use Illuminate\Support\ServiceProvider;
 use SchemaGuard\Console\Commands\CheckCommand;
+use SchemaGuard\Migrations\GitCommandRunner;
+use SchemaGuard\Migrations\MigrationDiscovery;
+use SchemaGuard\Migrations\NativeGitCommandRunner;
+use SchemaGuard\Pipeline\AnalysisPipeline;
 use SchemaGuard\Policy\PolicyConfiguration;
 
 final class SchemaGuardServiceProvider extends ServiceProvider
@@ -18,6 +22,19 @@ final class SchemaGuardServiceProvider extends ServiceProvider
             PolicyConfiguration::class,
             fn ($app): PolicyConfiguration => PolicyConfiguration::fromArray($app['config']->get('schemaguard')),
         );
+
+        $this->app->singleton(GitCommandRunner::class, NativeGitCommandRunner::class);
+
+        $this->app->singleton(
+            MigrationDiscovery::class,
+            fn ($app): MigrationDiscovery => new MigrationDiscovery(
+                $app->make('files'),
+                $app->make(PolicyConfiguration::class),
+                $app->make(GitCommandRunner::class),
+            ),
+        );
+
+        $this->app->singleton(AnalysisPipeline::class);
     }
 
     public function boot(): void

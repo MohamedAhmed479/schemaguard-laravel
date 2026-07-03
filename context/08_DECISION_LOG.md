@@ -100,3 +100,12 @@ Read this when changing architecture or phase boundaries. Skip it for mechanical
 - Consequences: Builders must add every node explicitly before adding edges.
 - Evidence: `src/Graph/DependencyGraph.php`; `DependencyGraphTest::test_unknown_edge_endpoint_throws_clear_exception`.
 - Revisit in: Only if a future graph import format needs validated bulk loading.
+
+## ADR-012 - Run Metadata Stays Outside Policy Results
+
+- Decision: Phase 5 reports migration/source/unparsed counts through `AnalysisRunResult` and `AnalysisMetadata`, not by adding CLI metadata to `PolicyResult`.
+- Status: Implemented and verified.
+- Why: `PolicyResult` should remain the deterministic policy-domain verdict, while CLI/JSON reporting needs run-level metadata.
+- Consequences: Reporters consume `AnalysisRunResult`; policy tests remain focused on findings and severity.
+- Evidence: `src/Pipeline/AnalysisRunResult.php`; `src/Pipeline/AnalysisMetadata.php`; `ConsoleReporterTest`.
+- Revisit in: Only if a later public API explicitly needs a single serialized result object.

@@ -86,13 +86,13 @@ return [
     */
     'enforce' => [
         'tables' => [
-            'users',
-            'subscriptions',
+            // 'users',
+            // 'subscriptions',
         ],
         'columns' => [
-            'users.id',
-            'users.email',
-            'subscriptions.stripe_id',
+            // 'users.id',
+            // 'users.email',
+            // 'subscriptions.stripe_id',
         ],
     ],
 

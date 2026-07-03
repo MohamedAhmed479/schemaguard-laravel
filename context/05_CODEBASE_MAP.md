@@ -8,7 +8,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | --- | --- | --- | --- |
 | `composer.json` | Composer package identity, dependencies, autoload, Laravel provider discovery, scripts. | Package setup, dependency, autoload, or provider questions. | Keep package name `schemaguard/laravel`; keep PHP-Parser dependency. |
 | `testbench.yaml` | Testbench CLI provider registration. | Testbench command issues. | Keeps `vendor/bin/testbench schemaguard:check` deterministic outside PHPUnit. |
-| `README.md` | Minimal installation, command, and config publish usage. | User-facing package docs change. | Do not claim full analysis CLI is wired until Phase 5. |
+| `README.md` | Minimal installation, command, and config publish usage. | User-facing package docs change. | Phase 5 CLI is wired; README still may need Phase 6 polish. |
 | `LICENSE.md` | MIT license. | License/package hygiene tasks. | Do not modify casually. |
 | `.gitattributes` | Composer export-ignore rules. | Package distribution hygiene. | Keep tests, parsed fixtures, `phpunit.xml.dist`, and `.gitattributes` excluded. |
 
@@ -22,13 +22,26 @@ Read this when locating files for a task. Skip it if the exact file is already k
 
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
-| `src/Console/Commands/CheckCommand.php` | Phase 1 smoke-test command. | Command registration/output changes. | Must remain `schemaguard:check`; no Phase 5 options until pipeline work begins. |
+| `src/Console/Commands/CheckCommand.php` | Phase 5 CLI entry point. | Command registration/output changes. | Parses options, runs `AnalysisPipeline`, renders via `ConsoleReporter`, resolves exit code; no Phase 6 cache/raw SQL work. |
+
+## Pipeline
+
+| Path | Purpose | Read When | Invariants / Warnings |
+| --- | --- | --- | --- |
+| `src/Pipeline/AnalysisRequest.php` | Immutable normalized CLI request. | CLI option or request validation changes. | Rejects conflicting migration source options and invalid formats. |
+| `src/Pipeline/MigrationSource.php` | Migration source enum. | Discovery strategy changes. | Valid sources are pending, explicit, and Git diff. |
+| `src/Pipeline/OutputFormat.php` | Output format enum. | Reporter or CLI format changes. | Valid formats are console and JSON only. |
+| `src/Pipeline/AnalysisPipeline.php` | Phase 5 orchestration flow. | Pipeline integration changes. | No rendering; no CLI parsing; no host code execution. |
+| `src/Pipeline/AnalysisMetadata.php` | Run metadata for reporting. | JSON `analyzed` changes. | Keep metadata separate from policy decisions. |
+| `src/Pipeline/AnalysisRunResult.php` | Policy result plus run metadata. | Reporter integration changes. | Do not pollute `PolicyResult` with CLI-only metadata. |
 
 ## Migrations
 
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
-| `src/Migrations/MigrationDiscovery.php` | Resolves migration files. | Migration file selection or path behavior. | Supports explicit and pending path strategies only; Git diff is Phase 5 and throws not-supported. |
+| `src/Migrations/MigrationDiscovery.php` | Resolves migration files. | Migration file selection or path behavior. | Supports explicit, pending, and local Git diff strategies. |
+| `src/Migrations/GitCommandRunner.php` | Testable Git command runner seam. | Git diff discovery changes. | Commands are arrays, not shell-concatenated strings. |
+| `src/Migrations/NativeGitCommandRunner.php` | Native Git process execution. | Git process behavior changes. | Used only for local Git diff migration discovery. |
 | `src/Migrations/MigrationParser.php` | AST-backed migration parser. | Migration parsing task. | Preserves `parseMany` and `parseFile`; diagnostics must remain public. |
 | `src/Migrations/Visitors/SchemaCallVisitor.php` | AST visitor for migration schema calls. | `up()` scope, Blueprint variable, table context, or type-change detection changes. | Must ignore `down()`, avoid table-context leaks, and emit indeterminate events for dynamic destructive arguments. |
 
@@ -70,6 +83,13 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `src/Policy/PolicyResult.php` | Aggregated policy result and counts. | Result aggregation changes. | Counts are derived from findings. |
 | `src/Policy/PolicyEngine.php` | Deterministic matrix and override evaluator. | Verdict logic changes. | `COLUMN_TYPE_CHANGED` with high usage is WARNING by default. |
 
+## Output
+
+| Path | Purpose | Read When | Invariants / Warnings |
+| --- | --- | --- | --- |
+| `src/Output/ConsoleReporter.php` | Console and JSON rendering. | Report formatting or JSON schema changes. | JSON mode must output exactly one JSON document and no progress. |
+| `src/Output/ExitCodeResolver.php` | Maps `PolicyResult` to CI exit code. | Exit-code changes. | Does not decide policy severity. |
+
 ## Value Objects
 
 | Path | Purpose | Read When | Invariants / Warnings |
@@ -91,9 +111,9 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
 | `tests/TestCase.php` | Testbench bootstrap. | Provider/config test issues. | Must register `SchemaGuardServiceProvider`. |
-| `tests/Feature/CheckCommandTest.php` | Phase 1 command smoke test. | Command behavior changes. | Proves command registration, banner, and exit code. |
+| `tests/Feature/CheckCommandTest.php` | Phase 5 command integration suite. | Command behavior changes. | Proves real pipeline verdicts, exit codes, JSON output, strict warnings, and scan-root errors. |
 | `tests/Unit/Migrations/MigrationParserTest.php` | Migration parser regression suite. | Parser changes. | Covers Phase 2 destructive operations plus Phase 3 type changes. |
-| `tests/Unit/Migrations/MigrationDiscoveryTest.php` | Migration discovery suite. | Discovery changes. | Must preserve sorting, `.php` filtering, explicit validation, and Git diff rejection. |
+| `tests/Unit/Migrations/MigrationDiscoveryTest.php` | Migration discovery suite. | Discovery changes. | Must preserve sorting, `.php` filtering, explicit validation, and Git diff command/filter/failure behavior. |
 | `tests/Unit/Scanning/CodebaseIndexerTest.php` | Phase 3A AST indexing suite. | Indexer changes. | Proves recursive discovery, ignore paths, parse failures, resolved names, parent links. |
 | `tests/Unit/Scanning/*VisitorTest.php` | Phase 3C usage visitor suites. | Usage scanner changes. | Includes model/query/resource/controller coverage, target scoping, false-positive gates, and dedupe coverage. |
 | `tests/Unit/Scanning/ControllerVisitorTest.php` | Direct controller/FormRequest visitor suite. | Controller validation, request input, or FormRequest rules behavior changes. | Validation/rules keys are high confidence; request input/property access stays medium. |
@@ -102,6 +122,11 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `tests/Unit/Graph/DependencyGraphBuilderTest.php` | Real fixture graph builder suite. | Graph builder changes. | Proves `users.phone -> App\Models\User -> UserController@show -> GET /api/users/{user}`. |
 | `tests/Unit/Policy/PolicyConfigurationTest.php` | Policy config validation suite. | Config schema or validation changes. | Invalid modes throw `ConfigurationException`. |
 | `tests/Unit/Policy/PolicyEngineTest.php` | Matrix and override suite. | Verdict logic changes. | Covers all 12 matrix cells and override precedence. |
+| `tests/Unit/Pipeline/AnalysisRequestTest.php` | CLI request validation suite. | Request option changes. | Covers defaults, explicit/diff source selection, strict, no-cache, invalid format, conflicts. |
+| `tests/Unit/Pipeline/AnalysisPipelineTest.php` | Pipeline orchestration suite. | Pipeline changes. | Covers no-event short-circuit, scan-root failure, diagnostics, progress callback. |
+| `tests/Unit/Output/ExitCodeResolverTest.php` | CI exit-code suite. | Exit-code changes. | Covers SAFE/BLOCK/WARNING strict/config combinations. |
+| `tests/Unit/Output/ConsoleReporterTest.php` | Console/JSON reporter suite. | Reporter changes. | Covers console fragments, JSON schema, and JSON fatal output. |
+| `tests/Feature/CheckCommandTest.php` | Phase 5 command E2E suite. | CLI behavior changes. | Covers BLOCK/SAFE/WARNING/strict/JSON/missing scan root. |
 | `tests/Unit/ValueObjects/ReferenceTest.php` | Value object identity/equality tests. | Reference object changes. | Keep ids stable. |
 
 ## Fixtures
@@ -114,6 +139,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `tests/Fixtures/false_positive.php` | False-positive scanner gate. | Usage visitor changes. | Must yield zero usages for `users.phone`. |
 | `tests/Fixtures/broken_syntax.php` | Indexer resilience fixture. | Indexer parse failure handling. | Must become `ParsedFile::failed(...)`. |
 | `tests/Fixtures/malformed/broken_migration.fixture` | Migration parser resilience fixture. | Parser diagnostics changes. | Must never crash the test suite. |
+| `tests/Fixtures/routes/api.php` | Parsed-only route fixture. | CLI or route-to-controller graph changes. | Used for Phase 5 blast-radius paths. |
 | `fixtures/phase4_app/` | Parsed-only mini Laravel-like app for Phase 4 graph tests. | Graph builder or route visitor changes. | Kept outside test autoload; export-ignored from Composer archives. |
 
 ## Specifications
@@ -127,4 +153,4 @@ Read this when locating files for a task. Skip it if the exact file is already k
 
 - Do not load every fixture unless changing parser/scanner behavior.
 - Do not inspect `vendor/` unless debugging dependency behavior.
-- Do not add CLI pipeline/reporter/JSON/exit-code behavior while working on Phase 4 maintenance.
+- Do not add raw SQL scanning, AST cache behavior, or hosted integration work while working on Phase 5 maintenance.

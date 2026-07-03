@@ -12,6 +12,7 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\NodeVisitor\ParentConnectingVisitor;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
+use SchemaGuard\Exceptions\CodebaseScanException;
 use SplFileInfo;
 
 final class CodebaseIndexer
@@ -33,7 +34,7 @@ final class CodebaseIndexer
      *
      * @return array<string, ParsedFile>
      */
-    public function index(?array $scanPaths = null): array
+    public function index(?array $scanPaths = null, ?callable $progress = null, bool $respectIgnorePaths = true): array
     {
         $paths = $scanPaths
             ?? $this->config['scan_paths']
@@ -44,15 +45,29 @@ final class CodebaseIndexer
         }
 
         $index = [];
+        $files = $this->discoverPhpFiles($paths);
+        if ($progress !== null) {
+            $progress('start', count($files));
+        }
 
-        foreach ($this->discoverPhpFiles($paths) as $path) {
-            if ($this->isIgnored($path)) {
+        foreach ($files as $path) {
+            if ($respectIgnorePaths && $this->isIgnored($path)) {
+                if ($progress !== null) {
+                    $progress('advance', $path);
+                }
+
                 continue;
             }
 
             $index[$path] = $this->parse($path);
+            if ($progress !== null) {
+                $progress('advance', $path);
+            }
         }
 
+        if ($progress !== null) {
+            $progress('finish', null);
+        }
         ksort($index);
 
         return $index;
@@ -96,7 +111,7 @@ final class CodebaseIndexer
             }
 
             if (! $this->files->isDirectory($absolute)) {
-                continue;
+                throw new CodebaseScanException("Scan path does not exist: {$path}");
             }
 
             /** @var SplFileInfo $file */
@@ -147,7 +162,8 @@ final class CodebaseIndexer
         $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
 
         if (! $this->isAbsolutePath($normalized)) {
-            $normalized = base_path($normalized);
+            $cwdRelative = (getcwd() ?: '') . DIRECTORY_SEPARATOR . $normalized;
+            $normalized = $this->files->exists($cwdRelative) ? $cwdRelative : base_path($normalized);
         }
 
         return realpath($normalized) ?: $normalized;

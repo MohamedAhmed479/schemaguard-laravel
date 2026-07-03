@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace SchemaGuard\Tests\Unit\Policy;
 
 use SchemaGuard\Exceptions\ConfigurationException;
+use SchemaGuard\Migrations\GitCommandRunner;
+use SchemaGuard\Migrations\MigrationDiscovery;
+use SchemaGuard\Pipeline\AnalysisPipeline;
 use SchemaGuard\Policy\PolicyConfiguration;
 use SchemaGuard\Policy\PolicyMode;
 use SchemaGuard\Tests\TestCase;
@@ -16,6 +19,8 @@ final class PolicyConfigurationTest extends TestCase
     public function test_it_parses_typed_policy_configuration(): void
     {
         $config = PolicyConfiguration::fromArray($this->config([
+            'scan_paths' => ['app', 'routes'],
+            'migration_paths' => ['database/migrations'],
             'policy' => [
                 'modes' => [
                     'column_dropped' => 'warn',
@@ -40,6 +45,8 @@ final class PolicyConfigurationTest extends TestCase
             ],
         ]));
 
+        $this->assertSame(['app', 'routes'], $config->scanPaths());
+        $this->assertSame(['database/migrations'], $config->migrationPaths());
         $this->assertSame(PolicyMode::WARN, $config->mode(ChangeType::COLUMN_DROPPED));
         $this->assertTrue($config->isIgnored('legacy_logs'));
         $this->assertTrue($config->isIgnored('users.phone'));
@@ -111,6 +118,17 @@ final class PolicyConfigurationTest extends TestCase
         ]));
     }
 
+    public function test_it_rejects_invalid_warning_exit_code(): void
+    {
+        $this->expectException(ConfigurationException::class);
+
+        PolicyConfiguration::fromArray($this->config([
+            'exit_codes' => [
+                'warning_exit_code' => 300,
+            ],
+        ]));
+    }
+
     public function test_policy_configuration_is_bound_as_a_container_singleton(): void
     {
         $first = $this->app->make(PolicyConfiguration::class);
@@ -118,6 +136,13 @@ final class PolicyConfigurationTest extends TestCase
 
         $this->assertInstanceOf(PolicyConfiguration::class, $first);
         $this->assertSame($first, $second);
+    }
+
+    public function test_phase_five_collaborators_are_resolvable_from_the_container(): void
+    {
+        $this->assertInstanceOf(GitCommandRunner::class, $this->app->make(GitCommandRunner::class));
+        $this->assertInstanceOf(MigrationDiscovery::class, $this->app->make(MigrationDiscovery::class));
+        $this->assertInstanceOf(AnalysisPipeline::class, $this->app->make(AnalysisPipeline::class));
     }
 
     /**
@@ -128,6 +153,8 @@ final class PolicyConfigurationTest extends TestCase
     private function config(array $overrides = []): array
     {
         return array_replace_recursive([
+            'scan_paths' => [],
+            'migration_paths' => [],
             'policy' => [
                 'modes' => [],
                 'escalate_exposed_to_block' => false,

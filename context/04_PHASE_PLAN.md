@@ -10,8 +10,8 @@ This is not a duplicate of [../IMPLEMENTATION_ROADMAP.md](../IMPLEMENTATION_ROAD
 | Phase 2 | Extract destructive migration events into `SchemaChangeEvent[]`. | Implemented and verified | Roadmap Phase 2 | Phase 1 DoD green. | Parser/discovery/value-object tests and full suite green. | `MigrationDiscovery`, `MigrationParser`, value objects, migration fixtures. |
 | Phase 3 | Build AST discovery and upgrade migration parsing where required. | Implemented and verified | Roadmap Phase 3 | Phase 2 DoD green against current tree. | AST scanner tests, Phase 2 parser regression green, type-change detection proven. | `ParsedFile`, `CodebaseIndexer`, AST `MigrationParser`, `SchemaCallVisitor`, usage scanner. |
 | Phase 4 | Convert changes and usages into graph/policy decisions. | Implemented and verified | Roadmap Phase 4 | Phase 3 usage model green. | Decision matrix, override, route, and graph tests green. | Graph, route bindings, policy engine, decision objects. |
-| Phase 5 | Wire full CLI and analysis pipeline. | Planned - not implemented | Roadmap Phase 5 | Phase 4 decision engine green. | End-to-end CLI tests green. | CLI options, pipeline orchestration, output rendering. |
-| Phase 6 | Add robustness, performance, and hardening. | Planned - not implemented | Roadmap Phase 6 | Full Phase 5 pipeline green. | Robustness/performance gates green. | Cache, edge handling, expanded fixtures. |
+| Phase 5 | Wire full CLI and analysis pipeline. | Implemented and verified | Roadmap Phase 5 | Phase 4 decision engine green. | End-to-end CLI tests green. | CLI options, pipeline orchestration, output rendering, JSON, exit codes. |
+| Phase 6 | Add robustness, performance, and hardening. | Planned - not implemented | Roadmap Phase 6 | Full Phase 5 pipeline green. | Robustness/performance gates green. | Cache, raw SQL scanning, edge handling, expanded fixtures. |
 
 ## Phase 3 Completed Milestones
 
@@ -49,4 +49,20 @@ Implemented scope:
 - `EventFinding`, `PolicyResult`, and `PolicyEngine`
 - Full decision matrix, override precedence, exposure escalation, and confidence-floor tests
 
-Do not begin Phase 5 until Phase 4 remains green against the current working tree.
+## Phase 5 Completed Milestones
+
+Status: Implemented and verified.
+
+Implemented scope:
+
+- `AnalysisRequest`, `MigrationSource`, and output format validation
+- `AnalysisPipeline`, `AnalysisRunResult`, and `AnalysisMetadata`
+- Local Git diff migration discovery
+- `CodebaseScanException` for missing scan roots
+- `ExitCodeResolver`
+- `ConsoleReporter` console and JSON output
+- Real `schemaguard:check` CLI wiring
+- Console-mode progress during indexing
+- Feature-level CLI tests for BLOCK, SAFE, WARNING, strict, JSON, and scan-root errors
+
+Do not begin Phase 6 until Phase 5 remains green against the current working tree.

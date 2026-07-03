@@ -6,54 +6,56 @@ Before taking ownership of a new task, update this file only after inspecting Gi
 
 ## Current Phase
 
-Phase 5 preparation.
+Phase 6 preparation.
 
 Status: Implemented and verified.
 
-Phase 1, Phase 2, Phase 3, and Phase 4 are verified. Phase 5 is Planned - not implemented.
+Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 are verified. Phase 6 is Planned - not implemented.
 
 ## Current Task
 
-Independent Phase 4 acceptance audit and corrective coverage pass.
+Phase 5 CLI acceptance audit and correction pass.
 
 Status: Implemented and verified.
 
-Phase 4 graph, route, and policy implementation has passed the targeted PHPUnit gates listed in [03_CURRENT_STATE.md](03_CURRENT_STATE.md). The acceptance audit strengthened direct coverage for route resource expansion, graph-builder relationships, table-drop usage matching, rename matching, configuration validation, singleton resolution, and override conflict precedence.
+Phase 5 request, discovery, pipeline, reporter, JSON, progress, exit-code, and command integration have passed the targeted PHPUnit and Testbench gates listed in [03_CURRENT_STATE.md](03_CURRENT_STATE.md). The acceptance pass also corrected default config so example `enforce` symbols are not active by default.
 
-No Phase 5 implementation has started.
+No Phase 6 implementation has started.
 
 ## Current Working Tree State
 
 Needs verification at the start of every new task.
 
-Current working tree contains uncommitted Phase 4 source, tests, fixtures, and context changes. This task did not create a commit.
+Current working tree contains uncommitted Phase 5 source, tests, fixtures, and context changes. This task did not create a commit.
 
 ## Next Safe Task
 
-Phase 5 - CLI + Pipeline.
+Phase 6 - Robustness.
 
 Entry gate:
 
 - Re-run `git status`.
 - Re-run `git diff --check`.
-- Confirm Phase 1/2/3/4 tests are still green against the current working tree.
+- Confirm Phase 1/2/3/4/5 tests are still green against the current working tree.
 - Read [04_PHASE_PLAN.md](04_PHASE_PLAN.md), [05_CODEBASE_MAP.md](05_CODEBASE_MAP.md), and [07_TESTING_AND_COMMANDS.md](07_TESTING_AND_COMMANDS.md).
 
 ## Blocked By
 
 No known project blocker.
 
-Needs verification: current user intent and current Git state before beginning Phase 5.
+Needs verification: current user intent and current Git state before beginning Phase 6.
 
 ## Do Not Start Yet
 
 Planned - not implemented until prior gates are green:
 
-- Phase 6
+- Raw SQL visitor and raw SQL scanning
+- AST cache
+- Golden-file E2E tests
+- Hosted PR checks or SaaS/dashboard work
 
 ## Handoff Notes
 
-- Keep Phase 1/2/3/4 behavior stable while preparing Phase 5.
-- Do not add CLI pipeline, reporter, JSON output, or exit-code behavior unless Phase 5 is explicitly in scope.
-- Do not add Raw SQL scanning, Git diff implementation, or AST cache yet.
+- Keep Phase 1/2/3/4/5 behavior stable while preparing Phase 6.
+- Do not add Raw SQL scanning, AST cache behavior, golden-file E2E gates, or hosted integrations unless Phase 6 or later is explicitly in scope.
 - Keep documentation status labels truthful: implemented facts, planned work, and needs-verification items must stay separate.
