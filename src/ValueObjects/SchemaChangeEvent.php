@@ -51,6 +51,17 @@ final readonly class SchemaChangeEvent
         );
     }
 
+    public static function columnTypeChanged(ColumnReference $column, string $newType, SourceLocation $location): self
+    {
+        return new self(
+            ChangeType::COLUMN_TYPE_CHANGED,
+            new TableReference($column->table),
+            $column,
+            $location,
+            newType: $newType,
+        );
+    }
+
     public static function indeterminate(
         ChangeType $type,
         ?TableReference $table,

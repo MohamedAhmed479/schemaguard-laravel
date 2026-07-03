@@ -127,11 +127,69 @@ final class MigrationParserTest extends TestCase
         $this->assertSame('phone', $events[0]->column?->column);
     }
 
-    public function test_it_ignores_strings_comments_non_destructive_and_future_phase_type_change_operations(): void
+    public function test_it_ignores_strings_comments_non_destructive_and_column_add_operations(): void
     {
         $events = $this->parser->parseFile($this->fixture('2024_06_08_000000_non_destructive_changes.php'));
 
         $this->assertSame([], $events);
+    }
+
+    public function test_it_parses_column_type_changes_with_change_modifier(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_10_000000_change_user_email_type.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_TYPE_CHANGED, $events[0]->type);
+        $this->assertSame('users', $events[0]->column?->table);
+        $this->assertSame('email', $events[0]->column?->column);
+        $this->assertSame('string', $events[0]->newType);
+        $this->assertFalse($events[0]->indeterminate);
+    }
+
+    public function test_it_parses_direct_column_type_changes_with_change_modifier(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_14_000000_change_user_email_type_direct.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_TYPE_CHANGED, $events[0]->type);
+        $this->assertSame('users', $events[0]->column?->table);
+        $this->assertSame('email', $events[0]->column?->column);
+        $this->assertSame('string', $events[0]->newType);
+        $this->assertFalse($events[0]->indeterminate);
+    }
+
+    public function test_it_supports_custom_blueprint_variables_and_does_not_leak_table_context(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_11_000000_custom_blueprint_and_multiple_tables.php'));
+
+        $this->assertCount(2, $events);
+        $this->assertSame(['users.phone', 'posts.title'], array_map(
+            static fn ($event): string => $event->column->table . '.' . $event->column->column,
+            $events,
+        ));
+    }
+
+    public function test_dynamic_rename_arguments_are_indeterminate(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_12_000000_dynamic_rename.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_RENAMED, $events[0]->type);
+        $this->assertSame('users', $events[0]->table?->table);
+        $this->assertNull($events[0]->column);
+        $this->assertTrue($events[0]->indeterminate);
+        $this->assertSame('dynamic old column name', $events[0]->reason);
+    }
+
+    public function test_dynamic_table_drop_is_indeterminate(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_13_000000_dynamic_table_drop.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::TABLE_DROPPED, $events[0]->type);
+        $this->assertNull($events[0]->table);
+        $this->assertTrue($events[0]->indeterminate);
+        $this->assertSame('dynamic table name', $events[0]->reason);
     }
 
     public function test_malformed_migration_degrades_to_empty_result_and_records_diagnostic(): void

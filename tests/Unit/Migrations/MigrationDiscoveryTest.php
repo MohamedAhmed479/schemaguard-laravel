@@ -47,6 +47,11 @@ final class MigrationDiscoveryTest extends TestCase
             $this->fixture('2024_06_07_000000_down_method_destructive_call.php'),
             $this->fixture('2024_06_08_000000_non_destructive_changes.php'),
             $this->fixture('2024_06_09_000000_drop_mixed_dynamic_columns.php'),
+            $this->fixture('2024_06_10_000000_change_user_email_type.php'),
+            $this->fixture('2024_06_11_000000_custom_blueprint_and_multiple_tables.php'),
+            $this->fixture('2024_06_12_000000_dynamic_rename.php'),
+            $this->fixture('2024_06_13_000000_dynamic_table_drop.php'),
+            $this->fixture('2024_06_14_000000_change_user_email_type_direct.php'),
         ], $discovery->resolve());
     }
 

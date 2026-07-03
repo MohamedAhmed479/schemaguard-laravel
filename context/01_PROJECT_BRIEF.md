@@ -16,7 +16,7 @@ SchemaGuard should eventually produce a decision, not just a report:
 - `WARNING`
 - `BLOCK`
 
-Phase 1 and Phase 2 currently provide the package foundation and migration extraction layer. The full decision engine is Planned — not implemented.
+Phase 1, Phase 2, and Phase 3 currently provide the package foundation, migration extraction layer, AST indexing, and usage discovery core. The full decision engine is Planned — not implemented.
 
 ## Destructive Event Model
 
@@ -33,10 +33,10 @@ The Phase-1 domain model includes:
 
 Detection status:
 
-- `COLUMN_DROPPED`: Implemented and verified in the Phase 2 token parser.
-- `COLUMN_RENAMED`: Implemented and verified in the Phase 2 token parser.
+- `COLUMN_DROPPED`: Implemented and verified in the migration parser.
+- `COLUMN_RENAMED`: Implemented and verified in the migration parser.
 - `TABLE_DROPPED`: Implemented and verified for `Schema::drop` and `Schema::dropIfExists`.
-- `COLUMN_TYPE_CHANGED`: Planned — not implemented. The enum case exists now; `->change()` detection is Phase 3B.
+- `COLUMN_TYPE_CHANGED`: Implemented and verified through AST `->change()` detection.
 
 ## Product Philosophy
 
