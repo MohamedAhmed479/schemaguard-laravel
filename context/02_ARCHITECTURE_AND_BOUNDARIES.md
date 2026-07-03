@@ -1,21 +1,21 @@
 # Architecture And Boundaries
 
-Read this for phase boundaries, parser guarantees, migration extraction, or usage scanning work. Skip it for README-only edits or package hygiene work that does not touch architecture.
+Read this for phase boundaries, parser guarantees, migration extraction, usage scanning, graph, or policy work. Skip it for README-only edits or package hygiene work that does not touch architecture.
 
 ## Phased Architecture
 
 - P1 Foundation: Implemented and verified.
 - P2 Migration Extraction: Implemented and verified.
 - P3 AST Discovery: Implemented and verified.
-- P4 Graph + Policy: Planned — not implemented.
-- P5 CLI + Pipeline: Planned — not implemented.
-- P6 Robustness: Planned — not implemented.
+- P4 Graph + Policy: Implemented and verified.
+- P5 CLI + Pipeline: Planned - not implemented.
+- P6 Robustness: Planned - not implemented.
 
 Exact current boundary:
 
 ```text
-Phase 1, Phase 2, and Phase 3 are acceptance-verified.
-Phase 4 has not started.
+Phase 1, Phase 2, Phase 3, and Phase 4 are acceptance-verified.
+Phase 5 has not started.
 ```
 
 ## Current Extraction Flow
@@ -29,13 +29,13 @@ Migration files
   -> SchemaChangeEvent[]
 ```
 
-`MigrationParser` now uses PHP-Parser for Phase 3 scope:
+`MigrationParser` uses PHP-Parser:
 
 ```php
 (new \PhpParser\ParserFactory())->createForNewestSupportedVersion()
 ```
 
-The Phase 2 token parser was replaced during Phase 3B. The public parser contract remains stable:
+The public parser contract remains stable:
 
 ```php
 MigrationParser::parseMany(array $paths): array
@@ -62,6 +62,20 @@ SchemaChangeEvent[]
   -> SymbolTargetSet
   -> visitor matching only relevant table/column targets
 ```
+
+## Current Logic Flow
+
+Status: Implemented and verified.
+
+```text
+SchemaChangeEvent[] + Usage[] + RouteBinding[]
+  -> DependencyGraphBuilder
+  -> DependencyGraph
+  -> PolicyEngine
+  -> PolicyResult
+```
+
+Phase 4 route discovery is static AST route-file scanning only. It produces `RouteBinding[]` for graph building and does not execute Laravel routes.
 
 ## Current Parser Guarantees
 
@@ -96,29 +110,44 @@ Evidence: Phase 3 scanning tests.
 - Uses rarity confidence for unresolved property/query receivers.
 - Rejects coincidental strings, arbitrary array keys, and local variables through the false-positive fixture gate.
 
-## Current Phase 3 Non-Goals
+## Current Logic Guarantees
 
-Status: Planned — not implemented.
+Status: Implemented and verified.
 
-- Route scanning.
+Evidence: Phase 4 graph, route, and policy tests.
+
+- `DependencyGraph` stores typed nodes and deterministic adjacency-list edges.
+- Duplicate nodes and edges are idempotent.
+- Unknown edge endpoints throw instead of corrupting the graph.
+- `reachableFrom()` and `exposedPaths()` are cycle-safe.
+- Exposed paths end at `Route` or `Resource` nodes.
+- `RouteVisitor` detects controller actions and resource routes from AST route files.
+- `DependencyGraphBuilder` builds impact paths from scanned usage and route evidence.
+- `PolicyEngine` implements the full 12-cell decision matrix.
+- Override precedence is ignore, enforce, per-type mode, then custom rule.
+- `PolicyConfiguration` validates enum-like config and throws `ConfigurationException` on invalid modes.
+
+## Current Phase 4 Non-Goals
+
+Status: Planned - not implemented.
+
 - Raw SQL visitor.
-- Dependency graph.
-- Policy engine.
 - CLI pipeline.
+- Console reporter.
+- Exit-code resolver.
 - JSON output.
-- Git diff migration discovery.
+- Git diff migration discovery implementation.
 - AST cache.
 
 ## Do Not Accidentally Pull These Features Forward
 
-Do not sneak these into Phase 3 maintenance tasks:
+Do not sneak these into Phase 4 maintenance tasks:
 
-- Dependency graph.
-- Policy engine.
 - Full analysis pipeline.
 - Enhanced CLI options.
+- Console reporter.
+- Exit-code resolver.
 - JSON output.
-- Git diff migration discovery.
-- Route scanning.
+- Git diff migration discovery implementation.
 - Raw SQL visitor.
 - Caching and Phase 6 robustness work.

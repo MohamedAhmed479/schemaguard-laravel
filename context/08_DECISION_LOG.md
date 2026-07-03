@@ -91,3 +91,12 @@ Read this when changing architecture or phase boundaries. Skip it for mechanical
 - Consequences: Do not wire raw SQL scanning into Phase 3 or Phase 4 unless the roadmap scope changes.
 - Evidence: `src/Scanning/ColumnTokenMatcher.php`; no `RawSqlVisitor` exists.
 - Revisit in: Phase 6.
+
+## ADR-011 - Graph Edges Reject Unknown Nodes
+
+- Decision: `DependencyGraph::addEdge()` throws on unknown source or target nodes instead of silently creating partial nodes.
+- Status: Implemented and verified.
+- Why: Silent graph corruption would make impact paths and policy exposure checks untrustworthy.
+- Consequences: Builders must add every node explicitly before adding edges.
+- Evidence: `src/Graph/DependencyGraph.php`; `DependencyGraphTest::test_unknown_edge_endpoint_throws_clear_exception`.
+- Revisit in: Only if a future graph import format needs validated bulk loading.

@@ -45,11 +45,21 @@ Read this before running validation or declaring a task complete. Skip it only f
 | `vendor/bin/phpunit --filter ColumnTokenMatcherTest` | Token matcher changes. | Rarity confidence and SQL-boundary matching. | Matcher tests pass. | Yes for matcher changes. |
 | `vendor/bin/phpunit --filter StaticAnalysisScannerTest` | Scanner coordinator changes. | Two-pass scanner, target scoping, false-positive gate, dedupe, and failed parsed file skipping. | Scanner tests pass. | Yes for scanner changes. |
 
+## Phase 4 Commands
+
+| Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
+| --- | --- | --- | --- | --- |
+| `vendor/bin/phpunit --filter RouteVisitorTest` | Route visitor changes. | Static AST route bindings for action/resource routes and dynamic-route rejection. | Route visitor tests pass. | Yes for route visitor changes. |
+| `vendor/bin/phpunit --filter DependencyGraphTest` | Graph primitive changes. | Node/edge dedupe, cycle-safe traversal, exposed paths, missing node behavior. | Graph tests pass. | Yes for graph changes. |
+| `vendor/bin/phpunit --filter DependencyGraphBuilderTest` | Graph builder changes. | Real fixture impact path from column to model to route. | Builder tests pass. | Yes for graph builder changes. |
+| `vendor/bin/phpunit --filter PolicyConfigurationTest` | Policy config changes. | Typed config parsing and invalid config failures. | Config tests pass. | Yes for policy config changes. |
+| `vendor/bin/phpunit --filter PolicyEngineTest` | Policy engine changes. | Full decision matrix, override precedence, exposure escalation, confidence floor, diagnostics. | Policy tests pass. | Yes for policy changes. |
+
 ## Full Suite
 
 | Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |
 | --- | --- | --- | --- | --- |
-| `vendor/bin/phpunit --testsuite Unit` | Any Phase 2/3 unit change. | All unit regressions remain green. | Unit suite passes. | Yes for Phase 2/3 source changes. |
+| `vendor/bin/phpunit --testsuite Unit` | Any Phase 2/3/4 unit change. | All unit regressions remain green. | Unit suite passes. | Yes for Phase 2/3/4 source changes. |
 | `vendor/bin/phpunit` | Any code/test change. | Full current package suite. | All tests pass. | Yes for code changes. |
 
 ## Troubleshooting

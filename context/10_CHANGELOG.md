@@ -85,3 +85,43 @@ Verification evidence:
 - `vendor/bin/phpunit --filter StaticAnalysisScannerTest`
 - `vendor/bin/phpunit --testsuite Unit`
 - `vendor/bin/phpunit`
+
+## Phase 4 - Logic Engine
+
+Status: Implemented and verified.
+
+- Added ordered `Severity` enum.
+- Added typed graph nodes, impact paths, deterministic dependency graph, and graph builder.
+- Added static AST route visitor producing `RouteBinding[]` for graph construction.
+- Added typed policy configuration, custom rules, policy findings/results, and policy engine.
+- Implemented the full SAFE/WARNING/BLOCK decision matrix.
+- Implemented override precedence: ignore, enforce, per-type mode, then custom rule.
+- Added Phase 4 mini-app fixtures outside test autoload and export-ignored them from package archives.
+- Preserved the Phase 1 `schemaguard:check` scaffold; no Phase 5 pipeline was wired.
+
+Verification evidence:
+
+- `vendor/bin/phpunit --filter RouteVisitorTest`
+- `vendor/bin/phpunit --filter DependencyGraphTest`
+- `vendor/bin/phpunit --filter DependencyGraphBuilderTest`
+- `vendor/bin/phpunit --filter PolicyConfigurationTest`
+- `vendor/bin/phpunit --filter PolicyEngineTest`
+- `vendor/bin/phpunit --testsuite Unit`
+
+## Phase 4 - Acceptance Audit Coverage Pass
+
+Status: Implemented and verified.
+
+- Strengthened route visitor tests to prove full API resource mapping and web resource expansion.
+- Strengthened graph tests for stable IDs, source locations, resource sinks, duplicate path suppression, and label rendering.
+- Strengthened graph-builder tests for core relationships and no public exposure inflation from model-only usage.
+- Strengthened policy tests for table-drop usage matching, rename original-column matching, empty results, confidence-floor behavior, exposure boundaries, config singleton resolution, and override conflict precedence.
+
+Verification evidence:
+
+- `vendor/bin/phpunit --filter RouteVisitorTest`
+- `vendor/bin/phpunit --filter DependencyGraphTest`
+- `vendor/bin/phpunit --filter DependencyGraphBuilderTest`
+- `vendor/bin/phpunit --filter PolicyConfigurationTest`
+- `vendor/bin/phpunit --filter PolicyEngineTest`
+- `vendor/bin/phpunit --testsuite Unit`

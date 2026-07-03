@@ -8,7 +8,7 @@ SchemaGuard is the `schemaguard/laravel` package: a deployment firewall for data
 
 Status: Implemented and verified.
 
-Phase 1, Phase 2, and Phase 3 are acceptance-verified against the current source and test suite. The next safe implementation task is Phase 4 - Graph + Policy, but only after re-verifying Git state and the Phase 1/2/3 gates.
+Phase 1, Phase 2, Phase 3, and Phase 4 are acceptance-verified against the current source and test suite. The next safe implementation task is Phase 5 - CLI + Pipeline, but only after re-verifying Git state and the Phase 1/2/3/4 gates.
 
 Agents must not begin Phase N+1 until the preceding phase's Definition of Done is green.
 
@@ -47,8 +47,8 @@ Do not assume this context is current without checking Git state. If source code
 
 ## Do Not Do This
 
-- Do not implement Phase 4+ while fixing Phase 1/2/3 unless the task explicitly starts that phase.
-- Do not add a policy engine, graph, full CLI pipeline, JSON output, Git diff support, route scanning, raw SQL visitor, or AST cache during Phase 3 maintenance.
+- Do not implement Phase 5+ while fixing Phase 1/2/3/4 unless the task explicitly starts that phase.
+- Do not add a full CLI pipeline, console reporter, JSON output, exit-code resolver, Git diff implementation, raw SQL visitor, or AST cache during Phase 4 maintenance.
 - Do not execute host migrations or host models during analysis.
 - Do not commit unless the user explicitly asks.
 - Do not treat roadmap plans as implemented facts.
