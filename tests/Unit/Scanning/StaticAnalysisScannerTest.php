@@ -116,6 +116,33 @@ final class StaticAnalysisScannerTest extends ScanningTestCase
         $this->assertNotSame([], $usages);
     }
 
+    public function test_raw_sql_usages_and_diagnostics_are_included_in_scanner_pass(): void
+    {
+        $scanner = new StaticAnalysisScanner();
+        $usages = $scanner->scan(
+            $this->index(['sql/ContactReport.php']),
+            [$this->targetEvent('users.phone')],
+        );
+
+        $this->assertTrue($this->hasUsage($usages, SurfaceType::RAW_SQL, Confidence::HIGH, 'select()'));
+        $this->assertCount(1, $scanner->diagnostics());
+        $this->assertStringContainsString('Indeterminate raw SQL', $scanner->diagnostics()[0]);
+    }
+
+    public function test_relation_traversal_supports_foreach_model_property_usages(): void
+    {
+        $scanner = new StaticAnalysisScanner();
+        $usages = $scanner->scan(
+            $this->index([
+                'Models',
+                'relation_type_resolver.php',
+            ]),
+            [$this->targetEvent('posts.title')],
+        );
+
+        $this->assertTrue($this->hasUsage($usages, SurfaceType::ELOQUENT_QUERY, Confidence::DEFINITIVE, 'property access'));
+    }
+
     /**
      * @param array<int, \SchemaGuard\ValueObjects\Usage> $usages
      */

@@ -10,6 +10,7 @@ use SchemaGuard\Scanning\Visitors\ApiResourceVisitor;
 use SchemaGuard\Scanning\Visitors\ControllerVisitor;
 use SchemaGuard\Scanning\Visitors\EloquentModelVisitor;
 use SchemaGuard\Scanning\Visitors\EloquentUsageVisitor;
+use SchemaGuard\Scanning\Visitors\RawSqlVisitor;
 use SchemaGuard\ValueObjects\SymbolTargetSet;
 use SchemaGuard\ValueObjects\Usage;
 
@@ -20,6 +21,9 @@ final class StaticAnalysisScanner
     private readonly ColumnTokenMatcher $tokenMatcher;
 
     private readonly ModelTableMap $modelTableMap;
+
+    /** @var string[] */
+    private array $diagnostics = [];
 
     public function __construct(
         ?LocalTypeResolver $typeResolver = null,
@@ -39,15 +43,10 @@ final class StaticAnalysisScanner
      */
     public function scan(array $index, array|SymbolTargetSet $events): array
     {
+        $this->diagnostics = [];
         $targets = $events instanceof SymbolTargetSet ? $events : SymbolTargetSet::fromEvents($events);
 
-        foreach ($index as $file) {
-            if (! $file->parsed || $file->ast === null) {
-                continue;
-            }
-
-            $this->runVisitor(EloquentModelVisitor::registration($this->modelTableMap), $file, $targets);
-        }
+        $this->registerModels($index, $targets);
 
         $usages = [];
 
@@ -70,6 +69,14 @@ final class StaticAnalysisScanner
     }
 
     /**
+     * @return string[]
+     */
+    public function diagnostics(): array
+    {
+        return $this->diagnostics;
+    }
+
+    /**
      * @return AbstractUsageVisitor[]
      */
     private function visitors(): array
@@ -79,7 +86,24 @@ final class StaticAnalysisScanner
             new EloquentUsageVisitor($this->modelTableMap, $this->typeResolver, $this->tokenMatcher),
             new ApiResourceVisitor($this->modelTableMap),
             new ControllerVisitor(),
+            new RawSqlVisitor($this->tokenMatcher),
         ];
+    }
+
+    /**
+     * @param array<string, ParsedFile> $index
+     */
+    private function registerModels(array $index, SymbolTargetSet $targets): void
+    {
+        for ($pass = 0; $pass < 2; $pass++) {
+            foreach ($index as $file) {
+                if (! $file->parsed || $file->ast === null) {
+                    continue;
+                }
+
+                $this->runVisitor(EloquentModelVisitor::registration($this->modelTableMap), $file, $targets);
+            }
+        }
     }
 
     /**
@@ -89,6 +113,7 @@ final class StaticAnalysisScanner
     {
         $visitor->reset($file, $targets);
         (new NodeTraverser($visitor))->traverse($file->ast ?? []);
+        $this->diagnostics = array_merge($this->diagnostics, $visitor->diagnostics());
 
         return $visitor->usages();
     }

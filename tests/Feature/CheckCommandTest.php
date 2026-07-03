@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchemaGuard\Tests\Feature;
 
 use Illuminate\Support\Facades\Artisan;
+use SchemaGuard\Console\Commands\CheckCommand;
 use SchemaGuard\Migrations\MigrationDiscovery;
 use SchemaGuard\Output\ExitCodeResolver;
 use SchemaGuard\Pipeline\AnalysisPipeline;
@@ -64,6 +65,25 @@ final class CheckCommandTest extends TestCase
             ->assertExitCode(1);
     }
 
+    public function test_renamed_column_still_referenced_blocks(): void
+    {
+        $this->configureForFixtures();
+
+        $exitCode = Artisan::call('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_02_000000_rename_users_column.php')],
+            '--path' => [
+                $this->fixture('Models'),
+                $this->fixture('rename'),
+            ],
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('COLUMN_RENAMED', $output);
+        $this->assertStringContainsString('full_name -> name', $output);
+        $this->assertStringContainsString('RESULT: BLOCK', $output);
+    }
+
     public function test_json_mode_outputs_only_valid_json_document(): void
     {
         $this->configureForFixtures();
@@ -84,8 +104,124 @@ final class CheckCommandTest extends TestCase
         $this->assertNotEmpty($decoded['findings']);
         $this->assertArrayHasKey('diagnostics', $decoded);
         $this->assertArrayHasKey('analyzed', $decoded);
+        $this->assertGreaterThanOrEqual(1, $decoded['analyzed']['unparsed_files']);
+        $this->assertStringContainsString('broken_syntax.php', implode("\n", $decoded['diagnostics']));
+        $this->assertStringContainsString('Indeterminate raw SQL', implode("\n", $decoded['diagnostics']));
         $this->assertArrayHasKey('usages', $decoded['findings'][0]);
         $this->assertArrayHasKey('impact_paths', $decoded['findings'][0]);
+    }
+
+    public function test_raw_sql_only_usage_blocks_dropped_column(): void
+    {
+        $this->configureForFixtures();
+
+        $this->artisan('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_01_000000_drop_phone_from_users.php')],
+            '--path' => [$this->fixture('sql')],
+        ])
+            ->expectsOutputToContain('RAW_SQL')
+            ->expectsOutputToContain('Indeterminate raw SQL')
+            ->expectsOutputToContain('RESULT: BLOCK')
+            ->assertExitCode(1);
+    }
+
+    public function test_neutralized_same_migration_drop_is_safe_with_diagnostic(): void
+    {
+        $this->configureForFixtures();
+
+        $this->artisan('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_18_000000_drop_and_readd_user_phone.php')],
+            '--path' => [$this->fixturesPath()],
+        ])
+            ->expectsOutputToContain('Neutralized')
+            ->expectsOutputToContain('RESULT: SAFE')
+            ->assertExitCode(0);
+    }
+
+    public function test_neutralized_same_migration_drop_is_safe_in_json_with_diagnostic(): void
+    {
+        $this->configureForFixtures();
+
+        $exitCode = Artisan::call('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_18_000000_drop_and_readd_user_phone.php')],
+            '--path' => [$this->fixturesPath()],
+            '--format' => 'json',
+        ]);
+        $decoded = $this->assertStrictJsonDocument(Artisan::output());
+
+        $this->assertSame(0, $exitCode);
+        $this->assertSame('SAFE', $decoded['overall']);
+        $this->assertTrue($decoded['findings'][0]['neutralized']);
+        $this->assertStringContainsString('same-migration re-add', $decoded['findings'][0]['reason']);
+        $this->assertStringContainsString('Neutralized', implode("\n", $decoded['diagnostics']));
+    }
+
+    public function test_enforced_table_drop_blocks_even_with_zero_usages(): void
+    {
+        $this->configureForFixtures();
+        config()->set('schemaguard.enforce.tables', ['legacy_logs']);
+        $this->forgetPhaseFiveInstances();
+
+        $exitCode = Artisan::call('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_03_000000_drop_legacy_logs_table.php')],
+            '--path' => [$this->fixture('Models')],
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('TABLE_DROPPED', $output);
+        $this->assertStringContainsString('legacy_logs', $output);
+        $this->assertStringContainsString('RESULT: BLOCK', $output);
+    }
+
+    public function test_ignored_used_column_is_safe(): void
+    {
+        $this->configureForFixtures();
+        config()->set('schemaguard.ignore.columns', ['users.phone']);
+        $this->forgetPhaseFiveInstances();
+
+        $this->artisan('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_01_000000_drop_phone_from_users.php')],
+            '--path' => [$this->fixturesPath()],
+        ])
+            ->expectsOutputToContain('RESULT: SAFE')
+            ->assertExitCode(0);
+    }
+
+    public function test_broken_source_file_is_reported_while_verdict_continues(): void
+    {
+        $this->configureForFixtures();
+
+        $exitCode = Artisan::call('schemaguard:check', [
+            '--migrations' => [$this->migration('2024_06_01_000000_drop_phone_from_users.php')],
+            '--path' => [$this->fixturesPath()],
+            '--format' => 'json',
+        ]);
+        $decoded = $this->assertStrictJsonDocument(Artisan::output());
+
+        $this->assertSame(1, $exitCode);
+        $this->assertSame('BLOCK', $decoded['overall']);
+        $this->assertGreaterThanOrEqual(1, $decoded['analyzed']['unparsed_files']);
+        $this->assertStringContainsString('broken_syntax.php', implode("\n", $decoded['diagnostics']));
+    }
+
+    public function test_golden_json_output_matches_contract(): void
+    {
+        $this->configureForFixtures();
+
+        $exitCode = Artisan::call('schemaguard:check', [
+            '--migrations' => [$this->fixture('golden/migrations/2024_06_19_000000_drop_phone_from_users.php')],
+            '--path' => [
+                $this->fixture('golden/app'),
+                $this->fixture('golden/routes'),
+            ],
+            '--format' => 'json',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStrictJsonDocument($output);
+        $this->assertJsonStringEqualsJsonFile($this->fixture('golden/expected.json'), $output);
     }
 
     public function test_json_mode_reports_safe_without_console_fragments(): void
@@ -187,14 +323,7 @@ final class CheckCommandTest extends TestCase
         config()->set('schemaguard.exit_codes.warning_exit_code', 0);
         config()->set('schemaguard.exit_codes.treat_warnings_as_failure', false);
 
-        foreach ([
-            PolicyConfiguration::class,
-            MigrationDiscovery::class,
-            AnalysisPipeline::class,
-            ExitCodeResolver::class,
-        ] as $abstract) {
-            $this->app->forgetInstance($abstract);
-        }
+        $this->forgetPhaseFiveInstances();
     }
 
     private function fixturesPath(): string
@@ -210,6 +339,24 @@ final class CheckCommandTest extends TestCase
     private function migration(string $name): string
     {
         return $this->migrationsPath() . DIRECTORY_SEPARATOR . $name;
+    }
+
+    private function fixture(string $path): string
+    {
+        return $this->fixturesPath() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+    }
+
+    private function forgetPhaseFiveInstances(): void
+    {
+        foreach ([
+            PolicyConfiguration::class,
+            MigrationDiscovery::class,
+            AnalysisPipeline::class,
+            ExitCodeResolver::class,
+            CheckCommand::class,
+        ] as $abstract) {
+            $this->app->forgetInstance($abstract);
+        }
     }
 
     /**

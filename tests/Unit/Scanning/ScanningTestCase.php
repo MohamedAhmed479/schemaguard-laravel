@@ -60,12 +60,14 @@ abstract class ScanningTestCase extends TestCase
     {
         $map = new ModelTableMap();
 
-        foreach ($this->index(['Models']) as $file) {
-            if (! $file->parsed || $file->ast === null) {
-                continue;
-            }
+        for ($pass = 0; $pass < 2; $pass++) {
+            foreach ($this->index(['Models']) as $file) {
+                if (! $file->parsed || $file->ast === null) {
+                    continue;
+                }
 
-            (new NodeTraverser(EloquentModelVisitor::registration($map)))->traverse($file->ast);
+                (new NodeTraverser(EloquentModelVisitor::registration($map)))->traverse($file->ast);
+            }
         }
 
         return $map;

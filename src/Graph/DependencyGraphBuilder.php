@@ -45,12 +45,14 @@ final class DependencyGraphBuilder
     {
         $map = new ModelTableMap();
 
-        foreach ($index as $file) {
-            if (! $file instanceof ParsedFile || ! $file->parsed || $file->ast === null) {
-                continue;
-            }
+        for ($pass = 0; $pass < 2; $pass++) {
+            foreach ($index as $file) {
+                if (! $file instanceof ParsedFile || ! $file->parsed || $file->ast === null) {
+                    continue;
+                }
 
-            (new NodeTraverser(EloquentModelVisitor::registration($map)))->traverse($file->ast);
+                (new NodeTraverser(EloquentModelVisitor::registration($map)))->traverse($file->ast);
+            }
         }
 
         return $map;

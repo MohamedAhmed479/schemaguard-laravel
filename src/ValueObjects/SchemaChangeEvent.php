@@ -15,6 +15,7 @@ final readonly class SchemaChangeEvent
         public ?string $newType = null,
         public bool $indeterminate = false,
         public ?string $reason = null,
+        public bool $neutralized = false,
     ) {
     }
 
@@ -75,6 +76,21 @@ final readonly class SchemaChangeEvent
             $location,
             indeterminate: true,
             reason: $reason,
+        );
+    }
+
+    public function neutralized(string $reason): self
+    {
+        return new self(
+            $this->type,
+            $this->table,
+            $this->column,
+            $this->location,
+            $this->renamedTo,
+            $this->newType,
+            $this->indeterminate,
+            $reason,
+            neutralized: true,
         );
     }
 }

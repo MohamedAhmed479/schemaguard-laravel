@@ -1,6 +1,6 @@
 # Architecture And Boundaries
 
-Read this for phase boundaries, parser guarantees, migration extraction, usage scanning, graph, or policy work. Skip it for README-only edits or package hygiene work that does not touch architecture.
+Read this for phase boundaries, parser guarantees, migration extraction, usage scanning, graph, policy, CLI, or robustness work. Skip it for README-only edits or package hygiene work that does not touch architecture.
 
 ## Phased Architecture
 
@@ -9,75 +9,16 @@ Read this for phase boundaries, parser guarantees, migration extraction, usage s
 - P3 AST Discovery: Implemented and verified.
 - P4 Graph + Policy: Implemented and verified.
 - P5 CLI + Pipeline: Implemented and verified.
-- P6 Robustness: Planned - not implemented.
+- P6 Robustness: Implemented and verified.
 
 Exact current boundary:
 
 ```text
-Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 are acceptance-verified.
-Phase 6 has not started.
+Phase 1 through Phase 6 are implemented and verified.
+The Phase-1 product implementation is complete.
 ```
 
-## Current Extraction Flow
-
-Status: Implemented and verified.
-
-```text
-Migration files
-  -> MigrationDiscovery
-  -> MigrationParser
-  -> SchemaChangeEvent[]
-```
-
-`MigrationParser` uses PHP-Parser:
-
-```php
-(new \PhpParser\ParserFactory())->createForNewestSupportedVersion()
-```
-
-The public parser contract remains stable:
-
-```php
-MigrationParser::parseMany(array $paths): array
-MigrationParser::parseFile(string $path): array
-```
-
-Both return `SchemaChangeEvent[]`.
-
-## Current Scanner Flow
-
-Status: Implemented and verified.
-
-```text
-Source PHP files
-  -> CodebaseIndexer
-  -> StaticAnalysisScanner
-  -> Usage[]
-```
-
-The scanner is target-scoped:
-
-```text
-SchemaChangeEvent[]
-  -> SymbolTargetSet
-  -> visitor matching only relevant table/column targets
-```
-
-## Current Logic Flow
-
-Status: Implemented and verified.
-
-```text
-SchemaChangeEvent[] + Usage[] + RouteBinding[]
-  -> DependencyGraphBuilder
-  -> DependencyGraph
-  -> PolicyEngine
-  -> PolicyResult
-```
-
-Phase 4 route discovery is static AST route-file scanning only. It produces `RouteBinding[]` for graph building and does not execute Laravel routes.
-
-## Current CLI Flow
+## Current Pipeline
 
 Status: Implemented and verified.
 
@@ -96,92 +37,75 @@ schemaguard:check
   -> ExitCodeResolver
 ```
 
-The command now supports explicit migrations, Git diff migration discovery, path overrides, console output, JSON output, strict warning handling, and the `--no-cache` contract flag. No AST cache exists yet; `useCache=false` is represented for Phase 6 without adding cache behavior.
+The command supports explicit migrations, pending migrations, local Git diff migration discovery, path overrides, console output, JSON output, strict warning handling, and `--no-cache`. `--no-cache` bypasses the optional AST cache.
 
-## Current Parser Guarantees
+## Parser Guarantees
 
 Status: Implemented and verified.
 
-Evidence: `MigrationParserTest`.
-
-- Detects `$table->dropColumn('column')`.
-- Detects `$table->dropColumn(['a', 'b'])`.
-- Detects `$table->renameColumn('old', 'new')`.
-- Detects `Schema::drop('table')`.
-- Detects `Schema::dropIfExists('table')`.
-- Detects `$table->string('email')->change()` as `COLUMN_TYPE_CHANGED`.
-- Supports custom Blueprint closure variable names.
-- Emits indeterminate events for dynamic destructive arguments.
+- Uses PHP-Parser internally.
+- Preserves `MigrationParser::parseMany(array $paths): array` and `MigrationParser::parseFile(string $path): array`.
+- Returns `SchemaChangeEvent[]`.
+- Detects dropped columns, renamed columns, dropped tables, `dropIfExists`, array drops, dynamic destructive arguments, and `->change()` type changes.
 - Ignores destructive operations in `down()` methods.
-- Does not parse comments or string literals as code.
-- Degrades safely on missing or malformed migration files.
-- Exposes diagnostics through `MigrationParser::diagnostics()`.
+- Supports custom Blueprint closure variable names.
+- Keeps table context isolated across closures.
+- Marks same-table/same-column drop/re-add in the same `up()` migration as neutralized and emits diagnostics.
+- Degrades safely on missing or malformed migration files and exposes diagnostics.
 
-## Current Scanner Guarantees
+## Scanner Guarantees
 
 Status: Implemented and verified.
 
-Evidence: Phase 3 scanning tests.
-
-- Indexes PHP files recursively and decorates AST nodes once with `NameResolver` and `ParentConnectingVisitor`.
-- Failed PHP parses become `ParsedFile::failed(...)` and do not abort scans.
+- Recursively indexes PHP source files with `NameResolver` and `ParentConnectingVisitor`.
+- Failed PHP parses become `ParsedFile::failed(...)` and continue through analysis metadata/diagnostics.
 - Builds `ModelTableMap` before usage visitors run.
-- Detects model schema, Eloquent query/property, API resource, controller validation, controller request input, and relation usages.
-- Uses `LocalTypeResolver` for conservative intra-procedural type inference.
-- Uses rarity confidence for unresolved property/query receivers.
-- Rejects coincidental strings, arbitrary array keys, and local variables through the false-positive fixture gate.
+- Detects model schema, Eloquent query/property, API resource, controller validation/input, relation, and raw SQL usages.
+- Uses conservative intra-procedural type inference.
+- Handles complex Eloquent relationship keys and relation traversal where statically proven.
+- Treats computed modern accessors and `$appends`-only attributes as virtual unless backed by real model-schema evidence.
+- Rejects coincidental strings, arbitrary array keys, local variables, and SQL substring decoys.
+- Raw SQL matching is token-boundary based, not full SQL grammar parsing.
+- Dynamic raw SQL emits diagnostics rather than guessed usages.
 
-## Current Logic Guarantees
+## Graph And Policy Guarantees
 
 Status: Implemented and verified.
 
-Evidence: Phase 4 graph, route, and policy tests.
-
-- `DependencyGraph` stores typed nodes and deterministic adjacency-list edges.
+- `DependencyGraph` stores typed deterministic nodes and edges.
 - Duplicate nodes and edges are idempotent.
 - Unknown edge endpoints throw instead of corrupting the graph.
-- `reachableFrom()` and `exposedPaths()` are cycle-safe.
-- Exposed paths end at `Route` or `Resource` nodes.
-- `RouteVisitor` detects controller actions and resource routes from AST route files.
-- `DependencyGraphBuilder` builds impact paths from scanned usage and route evidence.
-- `PolicyEngine` implements the full 12-cell decision matrix.
-- Override precedence is ignore, enforce, per-type mode, then custom rule.
-- `PolicyConfiguration` validates enum-like config and throws `ConfigurationException` on invalid modes.
+- Reachability and exposed-path traversal are cycle-safe.
+- Static `RouteVisitor` produces `RouteBinding[]` from route ASTs without executing routes.
+- `PolicyEngine` implements the decision matrix and override order.
+- Ignore, enforce, per-type mode, custom rules, exposure escalation, and confidence floor are tested.
 
-## Current CLI Guarantees
+## Reporting Guarantees
 
 Status: Implemented and verified.
 
-Evidence: Phase 5 pipeline, output, and feature tests.
+- Console output includes counts, findings, usage tables, blast-radius paths, diagnostics, and a final `RESULT: ...`.
+- JSON mode emits one JSON document only.
+- JSON includes schema version, overall result, counts, exit code, analyzed metadata, findings, and diagnostics.
+- Paths in JSON are normalized to repository-relative paths where possible.
+- Fatal configuration/scan-root errors produce concise console output or valid JSON error output.
 
-- `AnalysisRequest` validates CLI options and rejects conflicting `--diff` plus `--migrations`.
-- `MigrationDiscovery` supports pending, explicit, and local Git diff strategies.
-- `AnalysisPipeline` short-circuits before indexing when there are no destructive events.
-- Missing scan roots fail clearly with `CodebaseScanException`.
-- Explicit `--path` scan roots are authoritative and are not filtered out by configured ignore globs.
-- Route scanning reuses indexed ASTs.
-- `ConsoleReporter` renders console reports and strict JSON output.
-- `ExitCodeResolver` maps SAFE/WARNING/BLOCK to CI exit codes without making policy decisions.
-- JSON mode emits one JSON document and no progress output.
+## Phase 6 Robustness Guarantees
 
-## Current Phase 5 Non-Goals
+Status: Implemented and verified.
 
-Status: Planned - not implemented.
-
-- Raw SQL visitor.
-- AST cache.
-- Raw SQL scanning.
-- Golden-file E2E tests.
-- Hosted PR checks.
-- SaaS/dashboard work.
+- `RawSqlVisitor` supports static first-string raw SQL calls and builder raw methods.
+- Qualified raw SQL matches are HIGH confidence; bare matches are MEDIUM; raw SQL is never DEFINITIVE.
+- `AstCache` is optional, content/mtime/path keyed, corruption-tolerant, and bypassable with `--no-cache`.
+- Golden JSON E2E output is source-controlled.
+- README and coverage gates are part of Phase 6 verification.
 
 ## Do Not Accidentally Pull These Features Forward
 
-Do not sneak these into Phase 5 maintenance tasks:
+Do not sneak these into Phase-1 product maintenance tasks:
 
-- Raw SQL visitor.
-- AST cache.
-- Raw SQL scanning.
-- Complex relationship and dynamic-attribute Phase 6 hardening.
-- Golden-file E2E gates.
-- Hosted integrations or dashboard work.
+- Hosted PR checks or GitHub App integration.
+- SaaS/dashboard work.
+- Multi-repository orchestration.
+- Non-Laravel framework parsing.
+- ML calibration.

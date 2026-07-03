@@ -10,33 +10,24 @@ Read this for product identity and product philosophy. Skip it when making a nar
 
 ## Core Product Behavior
 
-SchemaGuard should eventually produce a decision, not just a report:
+SchemaGuard produces a decision, not just a report:
 
 - `SAFE`
 - `WARNING`
 - `BLOCK`
 
-Phase 1, Phase 2, and Phase 3 currently provide the package foundation, migration extraction layer, AST indexing, and usage discovery core. The full decision engine is Planned — not implemented.
+Phase 1 through Phase 6 provide the package foundation, migration extraction, AST indexing, usage discovery, graph/policy decision engine, CLI reporting, and robustness hardening. The Phase-1 product implementation is complete and verified.
 
 ## Destructive Event Model
 
 Status: Implemented and verified.
 
-The enum is implemented. Not every event type is detected yet.
-
-The Phase-1 domain model includes:
+All Phase-1 destructive event types are represented and detected within the supported Laravel migration scope.
 
 - `COLUMN_DROPPED`
 - `COLUMN_RENAMED`
 - `TABLE_DROPPED`
 - `COLUMN_TYPE_CHANGED`
-
-Detection status:
-
-- `COLUMN_DROPPED`: Implemented and verified in the migration parser.
-- `COLUMN_RENAMED`: Implemented and verified in the migration parser.
-- `TABLE_DROPPED`: Implemented and verified for `Schema::drop` and `Schema::dropIfExists`.
-- `COLUMN_TYPE_CHANGED`: Implemented and verified through AST `->change()` detection.
 
 ## Product Philosophy
 
@@ -50,7 +41,7 @@ Detection status:
 
 ## Out of Scope Future Areas
 
-Planned — not implemented:
+Planned - not implemented:
 
 - GitHub App
 - SaaS dashboard

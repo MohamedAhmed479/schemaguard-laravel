@@ -32,8 +32,10 @@ final class ControllerVisitorTest extends ScanningTestCase
         $usages = $this->runVisitor(new ControllerVisitor(), $file, 'users.phone');
 
         $this->assertTrue($this->hasUsage($usages, Confidence::MEDIUM, 'input()'));
+        $this->assertTrue($this->hasUsage($usages, Confidence::MEDIUM, 'only()'));
         $this->assertTrue($this->hasUsage($usages, Confidence::MEDIUM, '$request property'));
         $this->assertFalse($this->hasUsage($usages, Confidence::HIGH, 'input()'));
+        $this->assertFalse($this->hasUsage($usages, Confidence::HIGH, 'only()'));
         $this->assertFalse($this->hasUsage($usages, Confidence::HIGH, '$request property'));
     }
 

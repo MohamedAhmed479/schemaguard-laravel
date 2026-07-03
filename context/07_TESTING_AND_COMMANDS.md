@@ -68,6 +68,15 @@ Read this before running validation or declaring a task complete. Skip it only f
 | `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures` | Manual CLI verification. | Real Testbench command returns BLOCK for used dropped column. | Output includes `RESULT: BLOCK`; exit code is 1. | Yes before Phase 5 completion. |
 | `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures --format=json` | Manual JSON verification. | JSON mode emits machine-readable result. | Valid JSON with `overall=BLOCK`; exit code is 1. | Yes before Phase 5 completion. |
 
+## Phase 6 Commands
+
+| Command | When to run | What it proves | Expected outcome | Mandatory |
+| --- | --- | --- | --- | --- |
+| `vendor/bin/phpunit --filter RawSqlVisitorTest` | Raw SQL scanning changes. | Static SQL matching, qualified/bare confidence, decoys, dynamic SQL diagnostics. | Test passes. | Yes for raw SQL changes. |
+| `vendor/bin/phpunit --filter AstCacheTest` | Cache/indexer changes. | Cache miss/store/hit, invalidation, no-cache bypass, corruption miss, parent links after cache retrieval. | Test passes. | Yes for cache changes. |
+| `vendor/bin/phpunit tests/Feature/CheckCommandTest.php` | End-to-end behavior changes. | Phase 6 feature matrix and golden JSON contract. | Test passes. | Yes for CLI/reporting changes. |
+| `vendor/bin/phpunit --coverage-text` | Final Phase 6 verification. | Measured source coverage with a real coverage driver. | Overall `src/` >= 85%; parser/scanner/policy areas >= 90%. | Yes before Phase 6 completion. |
+
 ## Full Suite
 
 | Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Complete |

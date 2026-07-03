@@ -1,0 +1,54 @@
+{
+    "schema_version": "1.0",
+    "overall": "BLOCK",
+    "counts": {
+        "block": 1,
+        "warning": 0,
+        "safe": 0
+    },
+    "exit_code": 1,
+    "analyzed": {
+        "migrations": 1,
+        "source_files": 3,
+        "unparsed_files": 0
+    },
+    "findings": [
+        {
+            "change_type": "COLUMN_DROPPED",
+            "table": "users",
+            "column": "phone",
+            "renamed_to": null,
+            "new_type": null,
+            "severity": "BLOCK",
+            "indeterminate": false,
+            "neutralized": false,
+            "reason": null,
+            "migration": {
+                "file": "tests/Fixtures/golden/migrations/2024_06_19_000000_drop_phone_from_users.php",
+                "line": 13
+            },
+            "usages": [
+                {
+                    "surface": "ELOQUENT_QUERY",
+                    "file": "tests/Fixtures/golden/app/Http/Controllers/UserController.php",
+                    "line": 16,
+                    "confidence": "DEFINITIVE",
+                    "detail": "property access"
+                },
+                {
+                    "surface": "MODEL_SCHEMA",
+                    "file": "tests/Fixtures/golden/app/Models/User.php",
+                    "line": 11,
+                    "confidence": "DEFINITIVE",
+                    "detail": "$fillable"
+                }
+            ],
+            "impact_paths": [
+                "users.phone \u2192 SchemaGuard\\Tests\\Fixtures\\golden\\app\\Models\\User \u2192 UserController@show \u2192 GET /api/users/{user}"
+            ]
+        }
+    ],
+    "diagnostics": [
+        "Indeterminate raw SQL at tests/Fixtures/golden/app/Http/Controllers/UserController.php:14 in select(): dynamic SQL string requires manual review."
+    ]
+}

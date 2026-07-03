@@ -46,9 +46,11 @@ final readonly class AnalysisPipeline
             $request->scanPaths,
             $progress,
             respectIgnorePaths: ! $request->scanPathsWereProvided,
+            useCache: $request->useCache,
         );
         $indexDiagnostics = $this->indexDiagnostics($index);
         $usages = $this->scanner->scan($index, $events);
+        $scannerDiagnostics = $this->scanner->diagnostics();
         $routeBindings = $this->routeBindings($index);
         $graph = $this->graphBuilder->build($index, $usages, $routeBindings);
         $policyResult = $this->policy->evaluate($events, $usages, $graph);
@@ -59,6 +61,7 @@ final readonly class AnalysisPipeline
                 [
                     ...$parserDiagnostics,
                     ...$indexDiagnostics,
+                    ...$scannerDiagnostics,
                     ...$policyResult->diagnostics,
                 ],
             ),

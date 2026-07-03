@@ -17,6 +17,7 @@ final class UserController
 
         $phone = $request->input('phone');
         $request->phone;
+        $request->only(['phone']);
 
         User::where('phone', $phone)->first();
         User::select('phone')->first();

@@ -27,6 +27,7 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
 
     private const MODEL_BASES = [
         'Illuminate\Database\Eloquent\Model',
+        'Illuminate\Database\Eloquent\Relations\Pivot',
         'Illuminate\Foundation\Auth\User',
     ];
 
@@ -41,10 +42,13 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
     private const RELATION_METHODS = [
         'belongsTo',
         'belongsToMany',
+        'hasManyThrough',
+        'hasOneThrough',
         'hasMany',
         'hasOne',
         'morphMany',
         'morphOne',
+        'morphTo',
     ];
 
     /** @var array<int, array{fqcn:string,table:string,structural:array<string, true>}|null> */
@@ -174,18 +178,105 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
         }
 
         $model = $this->currentModel();
+
+        match ($method) {
+            'belongsTo' => $this->handleBelongsTo($call, $model['table'], $method),
+            'hasMany', 'hasOne' => $this->handleHasOneOrMany($call, $model['table'], $method),
+            'belongsToMany' => $this->handleBelongsToMany($call, $model['table'], $method),
+            'hasManyThrough', 'hasOneThrough' => $this->handleThroughRelation($call, $model['table'], $method),
+            'morphMany', 'morphOne' => $this->handleMorphOneOrMany($call, $method),
+            'morphTo' => $this->handleMorphTo($call, $model['table'], $method),
+            default => null,
+        };
+    }
+
+    private function handleBelongsTo(MethodCall $call, string $currentTable, string $method): void
+    {
         $relatedTable = $this->relatedTableFromFirstArg($call);
 
-        if (($call->args[1]->value ?? null) instanceof String_ && $relatedTable !== null) {
-            $this->emitRelationUsage($relatedTable, $call->args[1]->value->value, $call, $method);
+        $this->emitStringArgRelation($call, 1, $currentTable, $method);
+
+        if ($relatedTable !== null) {
+            $this->emitStringArgRelation($call, 2, $relatedTable, $method);
+        }
+    }
+
+    private function handleHasOneOrMany(MethodCall $call, string $currentTable, string $method): void
+    {
+        $relatedTable = $this->relatedTableFromFirstArg($call);
+
+        if ($relatedTable !== null) {
+            $this->emitStringArgRelation($call, 1, $relatedTable, $method);
         }
 
-        if (($call->args[2]->value ?? null) instanceof String_) {
-            $table = in_array($method, ['belongsTo', 'belongsToMany'], true) && $relatedTable !== null
-                ? $relatedTable
-                : $model['table'];
-            $this->emitRelationUsage($table, $call->args[2]->value->value, $call, $method);
+        $this->emitStringArgRelation($call, 2, $currentTable, $method);
+    }
+
+    private function handleBelongsToMany(MethodCall $call, string $currentTable, string $method): void
+    {
+        $pivotTable = $this->stringArg($call, 1);
+        $relatedTable = $this->relatedTableFromFirstArg($call);
+
+        if ($pivotTable !== null) {
+            $this->emitStringArgRelation($call, 2, $pivotTable, $method);
+            $this->emitStringArgRelation($call, 3, $pivotTable, $method);
         }
+
+        $this->emitStringArgRelation($call, 4, $currentTable, $method);
+
+        if ($relatedTable !== null) {
+            $this->emitStringArgRelation($call, 5, $relatedTable, $method);
+        }
+    }
+
+    private function handleThroughRelation(MethodCall $call, string $currentTable, string $method): void
+    {
+        $relatedTable = $this->relatedTableFromFirstArg($call);
+        $throughTable = $this->tableFromClassArgument($call, 1);
+
+        if ($throughTable !== null) {
+            $this->emitStringArgRelation($call, 2, $throughTable, $method);
+        }
+
+        if ($relatedTable !== null) {
+            $this->emitStringArgRelation($call, 3, $relatedTable, $method);
+        }
+
+        $this->emitStringArgRelation($call, 4, $currentTable, $method);
+
+        if ($throughTable !== null) {
+            $this->emitStringArgRelation($call, 5, $throughTable, $method);
+        }
+    }
+
+    private function handleMorphOneOrMany(MethodCall $call, string $method): void
+    {
+        $relatedTable = $this->relatedTableFromFirstArg($call);
+        $name = $this->stringArg($call, 1);
+
+        if ($relatedTable === null || $name === null) {
+            return;
+        }
+
+        $this->emitRelationUsage($relatedTable, $name . '_type', $call, $method);
+        $this->emitRelationUsage($relatedTable, $name . '_id', $call, $method);
+    }
+
+    private function handleMorphTo(MethodCall $call, string $currentTable, string $method): void
+    {
+        $name = $this->stringArg($call, 0);
+
+        if ($name === null) {
+            $enclosing = $this->enclosingMethod($call);
+            $name = $enclosing?->name->toString();
+        }
+
+        if ($name === null || $name === '') {
+            return;
+        }
+
+        $this->emitRelationUsage($currentTable, $name . '_type', $call, $method);
+        $this->emitRelationUsage($currentTable, $name . '_id', $call, $method);
     }
 
     private function handleScopeQuery(MethodCall $call): void
@@ -252,7 +343,13 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
             return true;
         }
 
-        return $this->explicitTable($class) !== null || $this->hasProperty($class, 'fillable') || $this->hasProperty($class, 'casts');
+        if ($class->extends instanceof Name && $this->modelTableMap->hasModel($this->resolveName($class->extends))) {
+            return true;
+        }
+
+        return $this->hasProperty($class, 'fillable')
+            || $this->hasProperty($class, 'casts')
+            || ($this->explicitTable($class) !== null && $this->hasRelationshipMethod($class));
     }
 
     private function explicitTable(Class_ $class): ?string
@@ -271,6 +368,23 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
         foreach ($class->getProperties() as $property) {
             if ($property->props[0]->name->toString() === $name) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function hasRelationshipMethod(Class_ $class): bool
+    {
+        foreach ($class->getMethods() as $method) {
+            foreach ($method->stmts ?? [] as $statement) {
+                if (! $statement instanceof \PhpParser\Node\Stmt\Return_ || ! $statement->expr instanceof MethodCall) {
+                    continue;
+                }
+
+                if (in_array($this->methodName($statement->expr), self::RELATION_METHODS, true)) {
+                    return true;
+                }
             }
         }
 
@@ -377,6 +491,17 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
         return $related === null ? null : $this->modelTableMap->tableForModel($related);
     }
 
+    private function tableFromClassArgument(MethodCall $call, int $position): ?string
+    {
+        $expr = $call->args[$position]->value ?? null;
+
+        if (! $expr instanceof ClassConstFetch || ! $expr->class instanceof Name) {
+            return null;
+        }
+
+        return $this->modelTableMap->tableForModel($this->resolveName($expr->class));
+    }
+
     private function relatedModelFromFirstArg(MethodCall $call): ?string
     {
         $expr = $call->args[0]->value ?? null;
@@ -386,6 +511,22 @@ final class EloquentModelVisitor extends AbstractUsageVisitor
         }
 
         return $this->resolveName($expr->class);
+    }
+
+    private function emitStringArgRelation(MethodCall $call, int $position, string $table, string $detail): void
+    {
+        $column = $this->stringArg($call, $position);
+
+        if ($column !== null) {
+            $this->emitRelationUsage($table, $column, $call, $detail);
+        }
+    }
+
+    private function stringArg(MethodCall $call, int $position): ?string
+    {
+        $value = $call->args[$position]->value ?? null;
+
+        return $value instanceof String_ ? $value->value : null;
     }
 
     /**

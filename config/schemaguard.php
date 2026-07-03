@@ -56,9 +56,8 @@ return [
     | Policy
     |--------------------------------------------------------------------------
     |
-    | Per-change-type modes clamp the final verdict. The full policy engine is
-    | introduced in a later phase; these keys are present now so published
-    | configuration is stable from the first package release.
+    | Per-change-type modes clamp the final verdict after SchemaGuard has
+    | matched migration events to code usage evidence.
     |
     | Supported modes: block, warn, off.
     |
@@ -225,8 +224,8 @@ return [
     | AST Parse Cache
     |--------------------------------------------------------------------------
     |
-    | Later phases will cache parsed ASTs under this path. Phase 1 only
-    | publishes the stable configuration surface.
+    | Parsed PHP ASTs are cached under this path when caching is enabled.
+    | The --no-cache command option bypasses both reads and writes.
     |
     */
     'cache' => [

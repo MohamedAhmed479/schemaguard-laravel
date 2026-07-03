@@ -6,56 +6,55 @@ Before taking ownership of a new task, update this file only after inspecting Gi
 
 ## Current Phase
 
-Phase 6 preparation.
+Phase-1 product completion.
 
 Status: Implemented and verified.
 
-Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 are verified. Phase 6 is Planned - not implemented.
+Phase 1 through Phase 6 are implemented and verified. The Phase-1 product implementation is complete.
 
 ## Current Task
 
-Phase 5 CLI acceptance audit and correction pass.
+Final Phase-1 product acceptance audit.
 
 Status: Implemented and verified.
 
-Phase 5 request, discovery, pipeline, reporter, JSON, progress, exit-code, and command integration have passed the targeted PHPUnit and Testbench gates listed in [03_CURRENT_STATE.md](03_CURRENT_STATE.md). The acceptance pass also corrected default config so example `enforce` symbols are not active by default.
-
-No Phase 6 implementation has started.
+Raw SQL scanning, migration neutralization, degradation honesty, complex relationship handling, dynamic accessor safeguards, AST cache, golden JSON, README updates, and measurable coverage gates have passed the targeted PHPUnit, full PHPUnit, Testbench, and coverage gates listed in [03_CURRENT_STATE.md](03_CURRENT_STATE.md). The final acceptance audit also added focused proof that unrelated same-table or other-table re-adds do not neutralize a dropped column, and that raw SQL and neutralization diagnostics are visible in JSON.
 
 ## Current Working Tree State
 
 Needs verification at the start of every new task.
 
-Current working tree contains uncommitted Phase 5 source, tests, fixtures, and context changes. This task did not create a commit.
+Current working tree contains uncommitted Phase 6 source, tests, fixtures, README/config, PHPUnit coverage-filter, final acceptance-audit test hardening, and context changes. This task did not create a commit.
 
 ## Next Safe Task
 
-Phase 6 - Robustness.
+Release preparation, packaging validation, or explicitly scoped future-product planning.
 
 Entry gate:
 
 - Re-run `git status`.
 - Re-run `git diff --check`.
-- Confirm Phase 1/2/3/4/5 tests are still green against the current working tree.
+- Confirm Phase 1/2/3/4/5/6 tests and coverage are still green against the current working tree.
 - Read [04_PHASE_PLAN.md](04_PHASE_PLAN.md), [05_CODEBASE_MAP.md](05_CODEBASE_MAP.md), and [07_TESTING_AND_COMMANDS.md](07_TESTING_AND_COMMANDS.md).
 
 ## Blocked By
 
 No known project blocker.
 
-Needs verification: current user intent and current Git state before beginning Phase 6.
+Needs verification: current user intent and current Git state before audit/release work.
 
 ## Do Not Start Yet
 
-Planned - not implemented until prior gates are green:
+Planned - not implemented unless a new explicit product scope is approved:
 
-- Raw SQL visitor and raw SQL scanning
-- AST cache
-- Golden-file E2E tests
-- Hosted PR checks or SaaS/dashboard work
+- Hosted PR checks or GitHub App integration
+- SaaS/dashboard work
+- Multi-repository orchestration
+- Non-Laravel parsers
+- ML calibration
 
 ## Handoff Notes
 
-- Keep Phase 1/2/3/4/5 behavior stable while preparing Phase 6.
-- Do not add Raw SQL scanning, AST cache behavior, golden-file E2E gates, or hosted integrations unless Phase 6 or later is explicitly in scope.
+- Keep Phase 1/2/3/4/5/6 behavior stable during audit or release prep.
+- Do not add hosted integrations, SaaS, multi-repository orchestration, non-Laravel parsing, or ML calibration unless explicitly scoped.
 - Keep documentation status labels truthful: implemented facts, planned work, and needs-verification items must stay separate.

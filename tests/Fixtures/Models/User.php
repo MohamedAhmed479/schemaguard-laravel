@@ -61,6 +61,16 @@ final class User extends Model
         return $this->hasMany(Post::class, 'user_id', 'id');
     }
 
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id', 'id', 'id');
+    }
+
+    public function images()
+    {
+        return $this->morphMany(Image::class, 'imageable');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('active', true);

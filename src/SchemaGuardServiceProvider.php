@@ -11,6 +11,8 @@ use SchemaGuard\Migrations\MigrationDiscovery;
 use SchemaGuard\Migrations\NativeGitCommandRunner;
 use SchemaGuard\Pipeline\AnalysisPipeline;
 use SchemaGuard\Policy\PolicyConfiguration;
+use SchemaGuard\Scanning\AstCache;
+use SchemaGuard\Scanning\CodebaseIndexer;
 
 final class SchemaGuardServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,24 @@ final class SchemaGuardServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(GitCommandRunner::class, NativeGitCommandRunner::class);
+
+        $this->app->singleton(
+            AstCache::class,
+            fn ($app): AstCache => new AstCache(
+                $app->make('files'),
+                (string) $app['config']->get('schemaguard.cache.path'),
+                (bool) $app['config']->get('schemaguard.cache.enabled', true),
+            ),
+        );
+
+        $this->app->singleton(
+            CodebaseIndexer::class,
+            fn ($app): CodebaseIndexer => new CodebaseIndexer(
+                $app->make('files'),
+                $app['config']->get('schemaguard'),
+                $app->make(AstCache::class),
+            ),
+        );
 
         $this->app->singleton(
             MigrationDiscovery::class,

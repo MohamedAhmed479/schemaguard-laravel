@@ -138,7 +138,7 @@ Status: Implemented and verified.
 - Replaced the scaffold command with the real `schemaguard:check` pipeline and options.
 - Added console reporting, JSON output, JSON fatal errors, and console-mode indexing progress.
 - Added feature tests for BLOCK, SAFE, WARNING, strict warnings, JSON-only output, and missing scan root failures.
-- Preserved Phase 6 boundaries: no raw SQL visitor, no AST cache, no hosted integrations.
+- At Phase 5 completion time, preserved then-future Phase 6 boundaries: no raw SQL visitor, no AST cache, no hosted integrations.
 
 Verification evidence:
 
@@ -170,3 +170,29 @@ Verification evidence:
 - `vendor/bin/phpunit tests/Feature/CheckCommandTest.php`
 - `vendor/bin/phpunit --testsuite Unit`
 - `vendor/bin/phpunit`
+
+## Phase 6 - Edge Cases & Robustness
+
+Status: Implemented and verified.
+
+- Added conservative `RawSqlVisitor` coverage for static DB/raw builder SQL strings with HIGH qualified matches, MEDIUM bare matches, substring decoy protection, and dynamic SQL diagnostics.
+- Hardened migration handling for multi-table closure isolation and same-migration drop/re-add neutralization with visible diagnostics.
+- Strengthened scanner behavior for complex Eloquent relationships, relation traversal, modern accessor and `$appends` virtual attribute correctness, and conservative model recognition.
+- Added optional `AstCache` with content/mtime/path keys, cache-miss degradation, `--no-cache` bypass, and parent-link preservation after cache retrieval.
+- Added golden JSON E2E coverage and expanded CLI feature scenarios for used drops, unused drops, renames, type changes, raw-SQL-only usage, enforced/ignored symbols, broken source files, and neutralized drops.
+- During final acceptance audit, strengthened regression proof for non-neutralized unrelated re-adds and JSON-visible raw SQL/neutralization diagnostics.
+- Completed README usage, JSON, exit-code, CI, and limitation documentation.
+- Added PHPUnit source coverage filter and verified `src/` line coverage at 91.85% with Xdebug.
+
+Verification evidence:
+
+- `vendor/bin/phpunit --filter RawSqlVisitorTest`
+- `vendor/bin/phpunit --filter AstCacheTest`
+- `vendor/bin/phpunit --filter MigrationParserTest`
+- `vendor/bin/phpunit --filter EloquentModelVisitorTest`
+- `vendor/bin/phpunit --filter LocalTypeResolverTest`
+- `vendor/bin/phpunit --filter StaticAnalysisScannerTest`
+- `vendor/bin/phpunit tests/Feature/CheckCommandTest.php`
+- `vendor/bin/phpunit --testsuite Unit`
+- `vendor/bin/phpunit`
+- `vendor/bin/phpunit --coverage-text`

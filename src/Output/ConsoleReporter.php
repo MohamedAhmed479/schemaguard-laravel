@@ -207,7 +207,7 @@ final class ConsoleReporter
                 'unparsed_files' => $run->metadata->unparsedFileCount,
             ],
             'findings' => array_map(fn (EventFinding $finding): array => $this->findingPayload($finding), $this->sortedFindings($result->findings)),
-            'diagnostics' => $result->diagnostics,
+            'diagnostics' => array_map(fn (string $diagnostic): string => $this->normalizeDiagnostic($diagnostic), $result->diagnostics),
         ];
     }
 
@@ -226,19 +226,80 @@ final class ConsoleReporter
             'new_type' => $event->newType,
             'severity' => $finding->severity->name,
             'indeterminate' => $event->indeterminate,
+            'neutralized' => $event->neutralized,
+            'reason' => $event->reason,
             'migration' => [
-                'file' => $event->location->file,
+                'file' => $this->normalizePath($event->location->file),
                 'line' => $event->location->line,
             ],
             'usages' => array_map(static fn (Usage $usage): array => [
                 'surface' => $usage->surface->name,
-                'file' => $usage->location->file,
+                'file' => self::normalizeStaticPath($usage->location->file),
                 'line' => $usage->location->line,
                 'confidence' => $usage->confidence->name,
                 'detail' => $usage->detail,
             ], $finding->usages),
             'impact_paths' => array_map(static fn ($path): string => (string) $path, $finding->paths),
         ];
+    }
+
+    private function normalizeDiagnostic(string $diagnostic): string
+    {
+        $normalized = str_replace('\\', '/', $diagnostic);
+
+        foreach ($this->normalizationRoots() as $root) {
+            $normalized = str_replace($root . '/', '', $normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function normalizePath(string $path): string
+    {
+        return self::normalizeStaticPath($path);
+    }
+
+    private static function normalizeStaticPath(string $path): string
+    {
+        $normalized = str_replace('\\', '/', $path);
+
+        foreach (self::staticNormalizationRoots() as $root) {
+            $prefix = $root . '/';
+            if (str_starts_with($normalized, $prefix)) {
+                return substr($normalized, strlen($prefix));
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function normalizationRoots(): array
+    {
+        return self::staticNormalizationRoots();
+    }
+
+    /**
+     * @return string[]
+     */
+    private static function staticNormalizationRoots(): array
+    {
+        $roots = [
+            getcwd() ?: '',
+            base_path(),
+        ];
+
+        $normalized = [];
+        foreach ($roots as $root) {
+            $root = rtrim(str_replace('\\', '/', $root), '/');
+            if ($root !== '') {
+                $normalized[$root] = true;
+            }
+        }
+
+        return array_keys($normalized);
     }
 
     /**

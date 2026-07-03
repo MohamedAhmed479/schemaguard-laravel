@@ -25,6 +25,7 @@ final class CodebaseIndexer
     public function __construct(
         private readonly Filesystem $files,
         private readonly array $config = [],
+        private readonly ?AstCache $cache = null,
     ) {
         $this->parser = (new ParserFactory())->createForNewestSupportedVersion();
     }
@@ -34,8 +35,12 @@ final class CodebaseIndexer
      *
      * @return array<string, ParsedFile>
      */
-    public function index(?array $scanPaths = null, ?callable $progress = null, bool $respectIgnorePaths = true): array
-    {
+    public function index(
+        ?array $scanPaths = null,
+        ?callable $progress = null,
+        bool $respectIgnorePaths = true,
+        bool $useCache = true,
+    ): array {
         $paths = $scanPaths
             ?? $this->config['scan_paths']
             ?? config('schemaguard.scan_paths', ['app']);
@@ -59,7 +64,7 @@ final class CodebaseIndexer
                 continue;
             }
 
-            $index[$path] = $this->parse($path);
+            $index[$path] = $this->parse($path, $useCache);
             if ($progress !== null) {
                 $progress('advance', $path);
             }
@@ -73,20 +78,38 @@ final class CodebaseIndexer
         return $index;
     }
 
-    private function parse(string $path): ParsedFile
+    private function parse(string $path, bool $useCache): ParsedFile
     {
         try {
             $source = $this->files->get($path);
-            $ast = $this->parser->parse($source) ?? [];
-            $traverser = new NodeTraverser(
-                new NameResolver(),
-                new ParentConnectingVisitor(),
-            );
+            $ast = $useCache ? $this->cache?->get($path, $source) : null;
 
-            return ParsedFile::parsed($path, $traverser->traverse($ast));
+            if ($ast === null) {
+                $ast = $this->parser->parse($source) ?? [];
+                if ($useCache) {
+                    $this->cache?->put($path, $source, $ast);
+                }
+            }
+
+            return ParsedFile::parsed($path, $this->prepareAst($ast));
         } catch (FileNotFoundException|Error $exception) {
             return ParsedFile::failed($path, $exception->getMessage());
         }
+    }
+
+    /**
+     * @param array<int, \PhpParser\Node> $ast
+     *
+     * @return array<int, \PhpParser\Node>
+     */
+    private function prepareAst(array $ast): array
+    {
+        $traverser = new NodeTraverser(
+            new NameResolver(),
+            new ParentConnectingVisitor(),
+        );
+
+        return $traverser->traverse($ast);
     }
 
     /**

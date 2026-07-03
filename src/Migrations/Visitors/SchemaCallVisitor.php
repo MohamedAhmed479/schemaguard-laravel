@@ -58,6 +58,9 @@ final class SchemaCallVisitor extends NodeVisitorAbstract
     /** @var SchemaChangeEvent[] */
     private array $events = [];
 
+    /** @var array<string, true> */
+    private array $addedColumns = [];
+
     /** @var array<int, array{table:?string,blueprint:?string}> */
     private array $closureContexts = [];
 
@@ -124,7 +127,20 @@ final class SchemaCallVisitor extends NodeVisitorAbstract
      */
     public function events(): array
     {
-        return $this->events;
+        return array_map(function (SchemaChangeEvent $event): SchemaChangeEvent {
+            if (
+                $event->type === ChangeType::COLUMN_DROPPED
+                && $event->column !== null
+                && isset($this->addedColumns[$event->column->id()])
+            ) {
+                return $event->neutralized(sprintf(
+                    'Drop of %s was neutralized by a same-migration re-add.',
+                    "{$event->column->table}.{$event->column->column}",
+                ));
+            }
+
+            return $event;
+        }, $this->events);
     }
 
     private function handleSchemaCall(StaticCall $node): void
@@ -189,8 +205,14 @@ final class SchemaCallVisitor extends NodeVisitorAbstract
             return;
         }
 
-        if (in_array($method, self::COLUMN_TYPE_METHODS, true) && $this->chainHasChangeModifier($node)) {
-            $this->handleColumnTypeChanged($node, $method);
+        if (in_array($method, self::COLUMN_TYPE_METHODS, true)) {
+            if ($this->chainHasChangeModifier($node)) {
+                $this->handleColumnTypeChanged($node, $method);
+
+                return;
+            }
+
+            $this->handleColumnAdded($node);
         }
     }
 
@@ -257,6 +279,18 @@ final class SchemaCallVisitor extends NodeVisitorAbstract
         }
 
         $this->events[] = SchemaChangeEvent::columnTypeChanged(new ColumnReference($table, $column), $newType, $location);
+    }
+
+    private function handleColumnAdded(MethodCall $node): void
+    {
+        $table = $this->currentTable();
+        $column = $this->literalString($node->args[0]->value ?? null);
+
+        if ($table === null || $column === null) {
+            return;
+        }
+
+        $this->addedColumns[(new ColumnReference($table, $column))->id()] = true;
     }
 
     private function isSchemaFacadeCall(StaticCall $node): bool

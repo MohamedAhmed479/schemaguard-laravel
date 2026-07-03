@@ -271,6 +271,21 @@ final class PolicyEngineTest extends TestCase
         $this->assertCount(1, $result->diagnostics);
     }
 
+    public function test_neutralized_events_are_safe_and_emit_diagnostics_even_with_usage(): void
+    {
+        $event = SchemaChangeEvent::columnDropped(
+            new ColumnReference('users', 'phone'),
+            new SourceLocation('migration.php', 10),
+        )->neutralized('Drop of users.phone was neutralized by a same-migration re-add.');
+
+        $result = $this->engine()->evaluate([$event], [$this->usage($event, Confidence::DEFINITIVE)], new DependencyGraph());
+
+        $this->assertSame(Severity::SAFE, $result->overall);
+        $this->assertSame(Severity::SAFE, $result->findings[0]->severity);
+        $this->assertCount(1, $result->diagnostics);
+        $this->assertStringContainsString('Neutralized', $result->diagnostics[0]);
+    }
+
     /**
      * @param array<string, mixed> $config
      */

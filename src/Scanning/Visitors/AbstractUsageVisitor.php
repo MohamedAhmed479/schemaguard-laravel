@@ -23,11 +23,15 @@ abstract class AbstractUsageVisitor extends NodeVisitorAbstract
     /** @var Usage[] */
     private array $usages = [];
 
+    /** @var string[] */
+    private array $diagnostics = [];
+
     public function reset(ParsedFile $file, SymbolTargetSet $targets): void
     {
         $this->file = $file;
         $this->targets = $targets;
         $this->usages = [];
+        $this->diagnostics = [];
     }
 
     /**
@@ -38,9 +42,22 @@ abstract class AbstractUsageVisitor extends NodeVisitorAbstract
         return $this->usages;
     }
 
+    /**
+     * @return string[]
+     */
+    public function diagnostics(): array
+    {
+        return $this->diagnostics;
+    }
+
     protected function emit(Usage $usage): void
     {
         $this->usages[] = $usage;
+    }
+
+    protected function addDiagnostic(string $diagnostic): void
+    {
+        $this->diagnostics[] = $diagnostic;
     }
 
     protected function location(Node $node): SourceLocation

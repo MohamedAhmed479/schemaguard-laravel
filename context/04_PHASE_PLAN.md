@@ -6,63 +6,26 @@ This is not a duplicate of [../IMPLEMENTATION_ROADMAP.md](../IMPLEMENTATION_ROAD
 
 | Phase | Objective | Status | Canonical Reference | Entry Gate | Exit Gate | Primary Artifacts |
 | --- | --- | --- | --- | --- | --- | --- |
-| Phase 1 | Establish Laravel package foundation and smoke-test command. | Implemented and verified | Roadmap Phase 1 | Empty or package-start repo. | Composer, provider, config publishing, command, Testbench smoke test green. | `composer.json`, `config/schemaguard.php`, service provider, `CheckCommand`, test harness. |
+| Phase 1 | Establish Laravel package foundation and smoke-test command. | Implemented and verified | Roadmap Phase 1 | Empty or package-start repo. | Composer, provider, config publishing, command, Testbench smoke test green. | `composer.json`, config, service provider, `CheckCommand`, test harness. |
 | Phase 2 | Extract destructive migration events into `SchemaChangeEvent[]`. | Implemented and verified | Roadmap Phase 2 | Phase 1 DoD green. | Parser/discovery/value-object tests and full suite green. | `MigrationDiscovery`, `MigrationParser`, value objects, migration fixtures. |
-| Phase 3 | Build AST discovery and upgrade migration parsing where required. | Implemented and verified | Roadmap Phase 3 | Phase 2 DoD green against current tree. | AST scanner tests, Phase 2 parser regression green, type-change detection proven. | `ParsedFile`, `CodebaseIndexer`, AST `MigrationParser`, `SchemaCallVisitor`, usage scanner. |
+| Phase 3 | Build AST discovery and usage scanning. | Implemented and verified | Roadmap Phase 3 | Phase 2 DoD green. | AST scanner tests, parser regression green, type-change detection proven. | `ParsedFile`, `CodebaseIndexer`, `SchemaCallVisitor`, usage scanner. |
 | Phase 4 | Convert changes and usages into graph/policy decisions. | Implemented and verified | Roadmap Phase 4 | Phase 3 usage model green. | Decision matrix, override, route, and graph tests green. | Graph, route bindings, policy engine, decision objects. |
 | Phase 5 | Wire full CLI and analysis pipeline. | Implemented and verified | Roadmap Phase 5 | Phase 4 decision engine green. | End-to-end CLI tests green. | CLI options, pipeline orchestration, output rendering, JSON, exit codes. |
-| Phase 6 | Add robustness, performance, and hardening. | Planned - not implemented | Roadmap Phase 6 | Full Phase 5 pipeline green. | Robustness/performance gates green. | Cache, raw SQL scanning, edge handling, expanded fixtures. |
+| Phase 6 | Add robustness, performance, and hardening. | Implemented and verified | Roadmap Phase 6 | Full Phase 5 pipeline green. | Raw SQL, migration robustness, relationship, cache, golden JSON, README, and coverage gates green. | Raw SQL visitor, AST cache, edge handling, expanded fixtures, golden JSON, README. |
 
-## Phase 3 Completed Milestones
-
-Status: Implemented and verified.
-
-Implemented scope:
-
-- `ParsedFile`
-- `CodebaseIndexer`
-- PHP-Parser integration
-- `NameResolver`
-- `ParentConnectingVisitor`
-- Graceful broken-PHP handling
-- AST-backed `MigrationParser`
-- Stable `parseMany(array $paths): array` and `parseFile(string $path): array`
-- `SchemaCallVisitor`
-- Correct `up()` scope
-- Custom Blueprint variable handling
-- `COLUMN_TYPE_CHANGED` through `->change()`
-- `Confidence`, `Usage`, `ModelTableMap`, `LocalTypeResolver`, and `ColumnTokenMatcher`
-- Model, Eloquent usage, API resource, and controller visitors
-- False-positive fixture gate
-
-## Phase 4 Completed Milestones
+## Completed Product Scope
 
 Status: Implemented and verified.
 
-Implemented scope:
+- Laravel package foundation and publishable config.
+- Migration discovery and AST migration parsing.
+- AST source indexing and target-scoped usage discovery.
+- Dependency graph, route bindings, and policy engine.
+- CLI orchestration, console/JSON reporting, progress, Git diff discovery, and CI exit codes.
+- Phase 6 hardening: raw SQL, neutralization, degradation honesty, complex relations, dynamic attributes, cache, golden JSON, README, and coverage.
 
-- `Severity`
-- `GraphNode`, `NodeType`, `ImpactPath`, and `DependencyGraph`
-- Static AST `RouteVisitor` producing `RouteBinding[]`
-- `DependencyGraphBuilder`
-- `PolicyConfiguration`, `PolicyMode`, and custom rule validation
-- `EventFinding`, `PolicyResult`, and `PolicyEngine`
-- Full decision matrix, override precedence, exposure escalation, and confidence-floor tests
+## Next Safe Task
 
-## Phase 5 Completed Milestones
+Release preparation, packaging validation, or explicitly scoped future-product planning.
 
-Status: Implemented and verified.
-
-Implemented scope:
-
-- `AnalysisRequest`, `MigrationSource`, and output format validation
-- `AnalysisPipeline`, `AnalysisRunResult`, and `AnalysisMetadata`
-- Local Git diff migration discovery
-- `CodebaseScanException` for missing scan roots
-- `ExitCodeResolver`
-- `ConsoleReporter` console and JSON output
-- Real `schemaguard:check` CLI wiring
-- Console-mode progress during indexing
-- Feature-level CLI tests for BLOCK, SAFE, WARNING, strict, JSON, and scan-root errors
-
-Do not begin Phase 6 until Phase 5 remains green against the current working tree.
+Do not begin hosted PR checks, GitHub App work, SaaS/dashboard work, multi-repository orchestration, non-Laravel parsers, or ML calibration without a new explicit product scope.

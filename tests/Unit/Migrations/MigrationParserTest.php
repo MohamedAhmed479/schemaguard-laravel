@@ -169,6 +169,53 @@ final class MigrationParserTest extends TestCase
         ));
     }
 
+    public function test_multi_table_closures_keep_table_context_isolated(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_17_000000_drop_multi_table_columns.php'));
+
+        $this->assertCount(2, $events);
+        $this->assertSame(['users.phone', 'orders.legacy_code'], array_map(
+            static fn ($event): string => $event->column->table . '.' . $event->column->column,
+            $events,
+        ));
+    }
+
+    public function test_drop_readded_in_same_up_migration_is_marked_neutralized(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_18_000000_drop_and_readd_user_phone.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_DROPPED, $events[0]->type);
+        $this->assertSame('users', $events[0]->column?->table);
+        $this->assertSame('phone', $events[0]->column?->column);
+        $this->assertTrue($events[0]->neutralized);
+        $this->assertStringContainsString('neutralized', $events[0]->reason ?? '');
+    }
+
+    public function test_unrelated_readded_column_does_not_neutralize_drop(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_19_000000_drop_phone_readd_email.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_DROPPED, $events[0]->type);
+        $this->assertSame('users', $events[0]->column?->table);
+        $this->assertSame('phone', $events[0]->column?->column);
+        $this->assertFalse($events[0]->neutralized);
+        $this->assertNull($events[0]->reason);
+    }
+
+    public function test_readd_on_another_table_does_not_neutralize_drop(): void
+    {
+        $events = $this->parser->parseFile($this->fixture('2024_06_20_000000_drop_user_phone_readd_order_phone.php'));
+
+        $this->assertCount(1, $events);
+        $this->assertSame(ChangeType::COLUMN_DROPPED, $events[0]->type);
+        $this->assertSame('users', $events[0]->column?->table);
+        $this->assertSame('phone', $events[0]->column?->column);
+        $this->assertFalse($events[0]->neutralized);
+        $this->assertNull($events[0]->reason);
+    }
+
     public function test_dynamic_rename_arguments_are_indeterminate(): void
     {
         $events = $this->parser->parseFile($this->fixture('2024_06_12_000000_dynamic_rename.php'));

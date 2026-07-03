@@ -8,7 +8,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | --- | --- | --- | --- |
 | `composer.json` | Composer package identity, dependencies, autoload, Laravel provider discovery, scripts. | Package setup, dependency, autoload, or provider questions. | Keep package name `schemaguard/laravel`; keep PHP-Parser dependency. |
 | `testbench.yaml` | Testbench CLI provider registration. | Testbench command issues. | Keeps `vendor/bin/testbench schemaguard:check` deterministic outside PHPUnit. |
-| `README.md` | Minimal installation, command, and config publish usage. | User-facing package docs change. | Phase 5 CLI is wired; README still may need Phase 6 polish. |
+| `README.md` | User-facing installation, CLI, JSON, exit-code, CI, and limitation docs. | User-facing package docs change. | Must stay honest about conservative inference and raw SQL limitations. |
 | `LICENSE.md` | MIT license. | License/package hygiene tasks. | Do not modify casually. |
 | `.gitattributes` | Composer export-ignore rules. | Package distribution hygiene. | Keep tests, parsed fixtures, `phpunit.xml.dist`, and `.gitattributes` excluded. |
 
@@ -22,7 +22,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
-| `src/Console/Commands/CheckCommand.php` | Phase 5 CLI entry point. | Command registration/output changes. | Parses options, runs `AnalysisPipeline`, renders via `ConsoleReporter`, resolves exit code; no Phase 6 cache/raw SQL work. |
+| `src/Console/Commands/CheckCommand.php` | CLI entry point. | Command registration/output changes. | Parses options, runs `AnalysisPipeline`, renders via `ConsoleReporter`, resolves exit code; `--no-cache` bypasses AST cache. |
 
 ## Pipeline
 
@@ -50,9 +50,11 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
 | `src/Scanning/ParsedFile.php` | Immutable parsed/failed source file value. | AST indexing or parse failure handling. | Broken PHP becomes failed parsed file, not an aborting exception. |
-| `src/Scanning/CodebaseIndexer.php` | Recursively discovers and parses PHP files once. | AST indexing or scan path changes. | Applies `NameResolver` and `ParentConnectingVisitor`; no AST cache yet. |
+| `src/Scanning/CodebaseIndexer.php` | Recursively discovers and parses PHP files. | AST indexing, cache, or scan path changes. | Applies `NameResolver` and `ParentConnectingVisitor`; uses optional `AstCache` when enabled. |
+| `src/Scanning/AstCache.php` | Optional parsed-AST cache. | Cache behavior or `--no-cache` changes. | Cache failures degrade to miss; never writes cache under source/test/fixture directories. |
 | `src/Scanning/LocalTypeResolver.php` | Conservative intra-procedural type inference. | Property/query receiver resolution. | No cross-method/container/interface flow. Unknowns remain explicit. |
-| `src/Scanning/ColumnTokenMatcher.php` | Rarity and SQL-boundary token helper. | Unresolved confidence or future raw SQL work. | `matchesInSql()` exists, but no Raw SQL visitor exists yet. |
+| `src/Scanning/ColumnTokenMatcher.php` | Rarity and SQL-boundary token helper. | Unresolved confidence or raw SQL work. | Raw SQL matching is conservative token-boundary matching, not SQL grammar parsing. |
+| `src/Scanning/Visitors/RawSqlVisitor.php` | Static raw SQL usage visitor. | Raw SQL detection changes. | Static SQL only; qualified matches are HIGH, bare matches MEDIUM, dynamic SQL becomes diagnostics. |
 | `src/Scanning/ModelTableMap.php` | Maps model FQCNs to tables and simple relations. | Model registration or table-binding changes. | Uses Eloquent naming convention when `$table` is absent. |
 | `src/Scanning/StaticAnalysisScanner.php` | Phase 3 two-pass usage scanner coordinator. | Scanner integration work. | Returns `Usage[]`; does not build graph, policy findings, or CLI output. |
 | `src/Scanning/Visitors/AbstractUsageVisitor.php` | Base for target-scoped usage visitors. | Adding or changing usage visitors. | `reset()` must prevent leakage between files/scans. |
@@ -67,7 +69,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
 | `src/Graph/GraphNode.php` | Typed graph node value. | Node identity or label changes. | IDs are stable; labels are for display/path rendering only. |
-| `src/Graph/NodeType.php` | Graph node type enum. | Adding graph surfaces. | Do not add Phase 6 raw SQL graph behavior yet. |
+| `src/Graph/NodeType.php` | Graph node type enum. | Adding graph surfaces. | Keep graph identity stable for policy/reporting. |
 | `src/Graph/ImpactPath.php` | Ordered path from changed symbol to exposed surface. | Blast-radius path rendering. | `__toString()` renders labels, not opaque IDs. |
 | `src/Graph/DependencyGraph.php` | Deterministic adjacency-list graph. | Reachability or path changes. | Unknown edge endpoints throw; exposed sinks are routes/resources. |
 | `src/Graph/DependencyGraphBuilder.php` | Builds graph from parsed index, usages, and route bindings. | Phase 4 graph integration changes. | No policy decisions and no route inference from filenames. |
@@ -100,7 +102,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `src/ValueObjects/SourceLocation.php` | File/line/optional column source metadata. | Diagnostics or event location changes. | `fromNode()` is used by AST visitors. |
 | `src/ValueObjects/SchemaChangeEvent.php` | Event payload and named constructors. | Parser event output changes. | Keep `renamedTo`, `newType`, `indeterminate`, and reason behavior stable. |
 | `src/ValueObjects/Confidence.php` | Ordered usage confidence enum. | Usage scanner or future policy work. | `atLeast()` ordering is used by scanner dedupe and later policy. |
-| `src/ValueObjects/SurfaceType.php` | Usage surface enum. | Usage scanner or graph/policy work. | `RAW_SQL` exists as a future surface; no Raw SQL visitor exists yet. |
+| `src/ValueObjects/SurfaceType.php` | Usage surface enum. | Usage scanner or graph/policy work. | Includes `RAW_SQL`; raw SQL confidence never becomes DEFINITIVE. |
 | `src/ValueObjects/Usage.php` | Usage evidence payload. | Scanner visitor changes. | Holds symbol, surface, confidence, location, and detail. |
 | `src/ValueObjects/SymbolTargetSet.php` | Scanner target scope derived from schema events. | Scanner target matching changes. | Scanner must use this target set, not generic string search. |
 | `src/ValueObjects/Severity.php` | Ordered SAFE/WARNING/BLOCK enum. | Policy or result aggregation changes. | Int ordering drives max severity aggregation. |
@@ -111,7 +113,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
 | `tests/TestCase.php` | Testbench bootstrap. | Provider/config test issues. | Must register `SchemaGuardServiceProvider`. |
-| `tests/Feature/CheckCommandTest.php` | Phase 5 command integration suite. | Command behavior changes. | Proves real pipeline verdicts, exit codes, JSON output, strict warnings, and scan-root errors. |
+| `tests/Feature/CheckCommandTest.php` | Command integration and golden JSON suite. | Command behavior changes. | Proves BLOCK/SAFE/WARNING, strict warnings, JSON purity, raw SQL, ignored/enforced symbols, broken source diagnostics, neutralization, and golden JSON. |
 | `tests/Unit/Migrations/MigrationParserTest.php` | Migration parser regression suite. | Parser changes. | Covers Phase 2 destructive operations plus Phase 3 type changes. |
 | `tests/Unit/Migrations/MigrationDiscoveryTest.php` | Migration discovery suite. | Discovery changes. | Must preserve sorting, `.php` filtering, explicit validation, and Git diff command/filter/failure behavior. |
 | `tests/Unit/Scanning/CodebaseIndexerTest.php` | Phase 3A AST indexing suite. | Indexer changes. | Proves recursive discovery, ignore paths, parse failures, resolved names, parent links. |
@@ -126,7 +128,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `tests/Unit/Pipeline/AnalysisPipelineTest.php` | Pipeline orchestration suite. | Pipeline changes. | Covers no-event short-circuit, scan-root failure, diagnostics, progress callback. |
 | `tests/Unit/Output/ExitCodeResolverTest.php` | CI exit-code suite. | Exit-code changes. | Covers SAFE/BLOCK/WARNING strict/config combinations. |
 | `tests/Unit/Output/ConsoleReporterTest.php` | Console/JSON reporter suite. | Reporter changes. | Covers console fragments, JSON schema, and JSON fatal output. |
-| `tests/Feature/CheckCommandTest.php` | Phase 5 command E2E suite. | CLI behavior changes. | Covers BLOCK/SAFE/WARNING/strict/JSON/missing scan root. |
+| `tests/Feature/CheckCommandTest.php` | Command E2E suite. | CLI behavior changes. | Covers Phase 5 and Phase 6 end-to-end scenarios. |
 | `tests/Unit/ValueObjects/ReferenceTest.php` | Value object identity/equality tests. | Reference object changes. | Keep ids stable. |
 
 ## Fixtures
@@ -139,7 +141,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `tests/Fixtures/false_positive.php` | False-positive scanner gate. | Usage visitor changes. | Must yield zero usages for `users.phone`. |
 | `tests/Fixtures/broken_syntax.php` | Indexer resilience fixture. | Indexer parse failure handling. | Must become `ParsedFile::failed(...)`. |
 | `tests/Fixtures/malformed/broken_migration.fixture` | Migration parser resilience fixture. | Parser diagnostics changes. | Must never crash the test suite. |
-| `tests/Fixtures/routes/api.php` | Parsed-only route fixture. | CLI or route-to-controller graph changes. | Used for Phase 5 blast-radius paths. |
+| `tests/Fixtures/routes/api.php` | Parsed-only route fixture. | CLI or route-to-controller graph changes. | Used for blast-radius paths. |
 | `fixtures/phase4_app/` | Parsed-only mini Laravel-like app for Phase 4 graph tests. | Graph builder or route visitor changes. | Kept outside test autoload; export-ignored from Composer archives. |
 
 ## Specifications
@@ -153,4 +155,4 @@ Read this when locating files for a task. Skip it if the exact file is already k
 
 - Do not load every fixture unless changing parser/scanner behavior.
 - Do not inspect `vendor/` unless debugging dependency behavior.
-- Do not add raw SQL scanning, AST cache behavior, or hosted integration work while working on Phase 5 maintenance.
+- Do not add hosted integration work, SaaS, multi-repository orchestration, non-Laravel parsing, or ML calibration during Phase-1 product maintenance.

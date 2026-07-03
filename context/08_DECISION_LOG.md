@@ -83,14 +83,14 @@ Read this when changing architecture or phase boundaries. Skip it for mechanical
 - Evidence: `src/ValueObjects/SymbolTargetSet.php`; `StaticAnalysisScannerTest::test_scanner_only_emits_symbols_from_schema_change_targets`; `StaticAnalysisScannerTest::test_false_positive_fixture_yields_zero_usages_for_target_column`.
 - Revisit in: Future visitor additions.
 
-## ADR-010 - Raw SQL Matching Helper Exists Without A Raw SQL Visitor
+## ADR-010 - Conservative Raw SQL Scanning
 
-- Decision: `ColumnTokenMatcher::matchesInSql()` is implemented and tested, but no Raw SQL visitor is added in Phase 3.
+- Decision: Phase 6 uses `ColumnTokenMatcher::matchesInSql()` in `RawSqlVisitor` for conservative static SQL matching.
 - Status: Implemented and verified.
-- Why: The roadmap requires the matcher now while Raw SQL scanning remains later-phase work.
-- Consequences: Do not wire raw SQL scanning into Phase 3 or Phase 4 unless the roadmap scope changes.
-- Evidence: `src/Scanning/ColumnTokenMatcher.php`; no `RawSqlVisitor` exists.
-- Revisit in: Phase 6.
+- Why: The roadmap requires useful raw SQL evidence without pretending to implement a full SQL grammar.
+- Consequences: Qualified `table.column` matches are HIGH, bare column matches are MEDIUM, dynamic SQL creates diagnostics, and Raw SQL never becomes DEFINITIVE.
+- Evidence: `src/Scanning/ColumnTokenMatcher.php`; `src/Scanning/Visitors/RawSqlVisitor.php`; `tests/Unit/Scanning/RawSqlVisitorTest.php`.
+- Revisit in: Future SQL grammar work, if explicitly scoped.
 
 ## ADR-011 - Graph Edges Reject Unknown Nodes
 
@@ -109,3 +109,21 @@ Read this when changing architecture or phase boundaries. Skip it for mechanical
 - Consequences: Reporters consume `AnalysisRunResult`; policy tests remain focused on findings and severity.
 - Evidence: `src/Pipeline/AnalysisRunResult.php`; `src/Pipeline/AnalysisMetadata.php`; `ConsoleReporterTest`.
 - Revisit in: Only if a later public API explicitly needs a single serialized result object.
+
+## ADR-013 - Optional AST Cache Is Correctness-Neutral
+
+- Decision: Phase 6 caches raw parsed ASTs and re-applies `NameResolver` and `ParentConnectingVisitor` after cache retrieval.
+- Status: Implemented and verified.
+- Why: Cache hits should reduce parse cost without changing the AST shape expected by scanners.
+- Consequences: Cache corruption or unreadable cache files degrade to misses; `--no-cache` bypasses reads and writes.
+- Evidence: `src/Scanning/AstCache.php`; `tests/Unit/Scanning/AstCacheTest.php`.
+- Revisit in: Cache telemetry or invalidation tuning.
+
+## ADR-014 - Same-Migration Drop/Re-Add Neutralizes Destructive Findings
+
+- Decision: A column dropped and re-added on the same table in the same `up()` migration is marked neutralized, evaluated SAFE, and reported with diagnostics.
+- Status: Implemented and verified.
+- Why: This avoids false blocking when a migration temporarily rewrites a column while preserving a visible audit trail.
+- Consequences: Neutralization is same-table/same-column only and does not silently remove evidence.
+- Evidence: `src/Migrations/Visitors/SchemaCallVisitor.php`; `src/Policy/PolicyEngine.php`; migration parser, policy, and feature tests.
+- Revisit in: Future migration semantic modeling, if needed.

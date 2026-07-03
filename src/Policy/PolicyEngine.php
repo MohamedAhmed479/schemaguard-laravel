@@ -37,13 +37,15 @@ final readonly class PolicyEngine
             $relevant = $this->usagesFor($event, $usages);
             $peak = $this->peakConfidence($relevant);
             $exposed = $this->reachesExposed($event, $relevant, $graph);
-            $severity = $this->severityFor($event, $peak);
+            $severity = $event->neutralized ? Severity::SAFE : $this->severityFor($event, $peak);
 
-            if ($severity === Severity::WARNING && $exposed && $this->config->escalateExposedToBlock()) {
+            if (! $event->neutralized && $severity === Severity::WARNING && $exposed && $this->config->escalateExposedToBlock()) {
                 $severity = Severity::BLOCK;
             }
 
-            $severity = $this->config->applyOverrides($event, $severity);
+            if (! $event->neutralized) {
+                $severity = $this->config->applyOverrides($event, $severity);
+            }
 
             if ($event->indeterminate) {
                 $diagnostics[] = sprintf(
@@ -52,6 +54,16 @@ final readonly class PolicyEngine
                     $event->location->file,
                     $event->location->line,
                     $event->reason ?? 'manual review required',
+                );
+            }
+
+            if ($event->neutralized) {
+                $diagnostics[] = sprintf(
+                    'Neutralized %s at %s:%d: %s',
+                    $event->type->value,
+                    $event->location->file,
+                    $event->location->line,
+                    $event->reason ?? 'same-migration re-add',
                 );
             }
 

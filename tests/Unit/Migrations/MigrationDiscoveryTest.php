@@ -55,6 +55,10 @@ final class MigrationDiscoveryTest extends TestCase
             $this->fixture('2024_06_14_000000_change_user_email_type_direct.php'),
             $this->fixture('2024_06_15_000000_drop_unused_column_from_users.php'),
             $this->fixture('2024_06_16_000000_change_user_phone_type.php'),
+            $this->fixture('2024_06_17_000000_drop_multi_table_columns.php'),
+            $this->fixture('2024_06_18_000000_drop_and_readd_user_phone.php'),
+            $this->fixture('2024_06_19_000000_drop_phone_readd_email.php'),
+            $this->fixture('2024_06_20_000000_drop_user_phone_readd_order_phone.php'),
         ], $discovery->resolve());
     }
 
