@@ -41,9 +41,24 @@ final class MigrationDiscoveryTest extends TestCase
             $this->fixture('2024_06_01_000000_drop_phone_from_users.php'),
             $this->fixture('2024_06_02_000000_rename_users_column.php'),
             $this->fixture('2024_06_03_000000_drop_legacy_logs_table.php'),
+            $this->fixture('2024_06_04_000000_drop_legacy_logs_table_direct.php'),
             $this->fixture('2024_06_05_000000_drop_multi_columns.php'),
             $this->fixture('2024_06_06_000000_dynamic_drop.php'),
+            $this->fixture('2024_06_07_000000_down_method_destructive_call.php'),
+            $this->fixture('2024_06_08_000000_non_destructive_changes.php'),
+            $this->fixture('2024_06_09_000000_drop_mixed_dynamic_columns.php'),
         ], $discovery->resolve());
+    }
+
+    public function test_pending_discovery_ignores_non_php_files(): void
+    {
+        config()->set('schemaguard.migration_paths', [
+            $this->fixturesPath(),
+        ]);
+
+        $discovery = $this->app->make(MigrationDiscovery::class);
+
+        $this->assertNotContains($this->fixture('not_a_migration.txt'), $discovery->resolve());
     }
 
     public function test_explicit_missing_file_throws(): void
@@ -55,6 +70,19 @@ final class MigrationDiscoveryTest extends TestCase
         $discovery->resolve([
             'migrations' => [
                 $this->fixture('missing.php'),
+            ],
+        ]);
+    }
+
+    public function test_explicit_non_php_file_throws(): void
+    {
+        $discovery = new MigrationDiscovery(new Filesystem());
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $discovery->resolve([
+            'migrations' => [
+                $this->fixture('not_a_migration.txt'),
             ],
         ]);
     }

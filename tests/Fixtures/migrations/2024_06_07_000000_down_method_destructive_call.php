@@ -10,16 +10,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $t): void {
-            $t->dropColumn(['street', 'zip']);
+        Schema::table('users', function (Blueprint $table): void {
+            $table->dropColumn('phone');
         });
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $t): void {
-            $t->string('street');
-            $t->string('zip');
+        Schema::table('users', function (Blueprint $table): void {
+            $table->dropColumn('legacy_flag');
         });
     }
 };
