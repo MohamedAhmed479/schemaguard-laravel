@@ -1,0 +1,38 @@
+{
+    "name": "schemaguard/laravel",
+    "description": "A deployment firewall for database schema changes. Blocks destructive Laravel migrations before they reach production.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/console": "^11.0 || ^12.0",
+        "illuminate/filesystem": "^11.0 || ^12.0",
+        "illuminate/support": "^11.0 || ^12.0",
+        "nikic/php-parser": "^5.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SchemaGuard\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SchemaGuard\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SchemaGuard\\SchemaGuardServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}
