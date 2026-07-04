@@ -9,9 +9,20 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `composer.json` | Composer package identity, dependencies, autoload, Laravel provider discovery, scripts. | Package setup, dependency, autoload, or provider questions. | Keep package name `schemaguard/laravel`; keep PHP-Parser dependency. |
 | `testbench.yaml` | Testbench CLI provider registration. | Testbench command issues. | Keeps `vendor/bin/testbench schemaguard:check` deterministic outside PHPUnit. |
 | `README.md` | User-facing installation, CLI, JSON, exit-code, CI, and limitation docs. | User-facing package docs change. | Must stay honest about conservative inference and raw SQL limitations. |
+| `CONTRIBUTING.md` | Contributor setup, workflow, test, fixture, and release-boundary guidance. | Contributor workflow or PR expectations change. | Do not claim automated release workflows that do not exist. |
+| `SECURITY.md` | Security reporting guidance. | Security contact or vulnerability reporting process changes. | Contains a maintainer-replacement placeholder; do not invent a private email. |
 | `LICENSE.md` | MIT license. | License/package hygiene tasks. | Do not modify casually. |
 | `.gitattributes` | Composer export-ignore rules. | Package distribution hygiene. | Keep tests, fixtures, vendor, context/agent docs, planning docs, Testbench config, build artifacts, `phpunit.xml.dist`, and `.gitattributes` excluded from Composer archives. |
 | `RELEASE_CHECKLIST.md` | Reusable public-release process checklist. | Release preparation or publication tasks. | Process aid only; do not treat it as proof that a release was published. |
+
+## Community Workflow
+
+| Path | Purpose | Read When | Invariants / Warnings |
+| --- | --- | --- | --- |
+| `.github/ISSUE_TEMPLATE/bug_report.yml` | Structured bug report form. | Issue intake fields or support workflow changes. | Must ask for minimal migration/code samples and warn against pasting secrets. |
+| `.github/ISSUE_TEMPLATE/feature_request.yml` | Structured feature request form. | Feature intake changes. | Keep precision-first and conservative-analysis expectations visible. |
+| `.github/ISSUE_TEMPLATE/config.yml` | GitHub issue template configuration. | Issue-template routing changes. | Blank issues stay disabled; do not invent Discussions links. |
+| `.github/pull_request_template.md` | Contributor PR checklist. | PR expectations change. | Requires tests, context/docs notes, and false-positive/false-negative considerations. |
 
 ## Configuration
 

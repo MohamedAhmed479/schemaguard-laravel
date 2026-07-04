@@ -1,0 +1,68 @@
+name: Feature request
+description: Propose a new SchemaGuard capability or behavior change.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SchemaGuard is precision-first and conservative by design. New detection should avoid false confidence, avoid host app execution, and include regression tests for false positives and false negatives.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem being solved
+      description: What deployment-safety problem should this address?
+      placeholder: SchemaGuard cannot currently recognize a specific Laravel usage pattern.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the behavior you want.
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Example migration/code scenario
+      description: Provide a minimal migration and application-code example. Remove secrets and sensitive schema details.
+      render: php
+    validations:
+      required: true
+  - type: dropdown
+    id: expected_decision
+    attributes:
+      label: Expected SAFE / WARNING / BLOCK behavior
+      description: What should SchemaGuard decide for the example?
+      options:
+        - SAFE
+        - WARNING
+        - BLOCK
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workaround or alternative design have you considered?
+    validations:
+      required: true
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willing to contribute implementation/tests?
+      options:
+        - "Yes"
+        - "Yes, with maintainer guidance"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Add relevant package versions, links, or constraints.

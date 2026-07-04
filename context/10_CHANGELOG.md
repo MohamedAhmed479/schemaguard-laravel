@@ -235,3 +235,18 @@ Verification evidence:
 - `php artisan list --raw`
 - `php artisan schemaguard:check`
 - `php artisan vendor:publish --tag=schemaguard-config --force`
+
+## Post-Release Community Workflow
+
+Status: Implemented.
+
+- Added GitHub Issue Forms for bug reports and feature requests.
+- Added issue-template configuration with blank issues disabled and support routed through GitHub Issues.
+- Added a pull request template requiring problem statement, behavior impact, test commands, context/docs updates, breaking-change declaration, performance/cache impact, JSON contract impact, and false-positive/false-negative considerations.
+- Added concise contributor guidance for setup, tests, architecture, fixtures, context updates, bug fixes vs new capabilities, and release-tag boundaries.
+- Added security reporting guidance without inventing a private email or claiming GitHub private vulnerability reporting is enabled.
+
+Verification evidence:
+
+- `git diff --check`
+- Local YAML structure validation for `.github/ISSUE_TEMPLATE/*.yml`

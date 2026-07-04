@@ -1,0 +1,105 @@
+name: Bug report
+description: Report incorrect SchemaGuard behavior or a regression.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve SchemaGuard.
+
+        Privacy note: do not paste secrets, tokens, production credentials, private connection strings, or sensitive schema/business data. Reduce examples to the smallest safe reproduction.
+  - type: input
+    id: summary
+    attributes:
+      label: Bug summary
+      description: Describe the problem in one or two sentences.
+      placeholder: SchemaGuard reports SAFE for a used dropped column.
+    validations:
+      required: true
+  - type: input
+    id: schemaguard_version
+    attributes:
+      label: Installed SchemaGuard version
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: php_version
+    attributes:
+      label: PHP version
+      placeholder: "8.3.0"
+    validations:
+      required: true
+  - type: input
+    id: laravel_version
+    attributes:
+      label: Laravel version
+      placeholder: "12.0"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command executed
+      description: Paste the exact SchemaGuard command.
+      render: shell
+      placeholder: php artisan schemaguard:check --migrations=database/migrations/2026_07_03_000000_drop_phone_from_users.php --path=app
+    validations:
+      required: true
+  - type: checkboxes
+    id: options
+    attributes:
+      label: Options used
+      description: Check every option that was part of the run.
+      options:
+        - label: "--format=json"
+        - label: "--strict"
+        - label: "--diff"
+        - label: "--no-cache"
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should SchemaGuard have reported?
+      placeholder: Expected RESULT: BLOCK because app code still reads users.phone.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+      placeholder: SchemaGuard reported RESULT: SAFE.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Console output or JSON output
+      description: Paste relevant output with secrets and sensitive data removed.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: migration_sample
+    attributes:
+      label: Minimal migration sample
+      description: Provide the smallest migration that reproduces the issue. Do not include sensitive table or column names.
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: app_code_sample
+    attributes:
+      label: Minimal relevant application-code sample
+      description: Provide the smallest model/resource/controller/query/raw SQL sample needed to explain the behavior.
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Add anything else that may help, including whether this is a false positive or false negative.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the SchemaGuard README
+    url: https://github.com/MohamedAhmed479/schemaguard-laravel#readme
+    about: Start here for installation, CLI options, JSON output, exit codes, and known limitations.
+  - name: Questions and support
+    url: https://github.com/MohamedAhmed479/schemaguard-laravel/issues/new/choose
+    about: Use GitHub Issues for reproducible support requests, bug reports, and feature proposals.
