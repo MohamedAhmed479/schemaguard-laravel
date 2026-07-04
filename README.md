@@ -6,6 +6,11 @@ It statically analyzes pending, explicit, or Git-diff migration files, maps dest
 
 ## Installation
 
+Requirements:
+
+- PHP `^8.2`
+- Laravel components compatible with Laravel 11 or 12
+
 ```bash
 composer require schemaguard/laravel
 ```
@@ -43,6 +48,18 @@ Emit JSON for automation:
 ```bash
 php artisan schemaguard:check --diff --base=origin/main --format=json
 ```
+
+Useful options:
+
+| Option | Purpose |
+| --- | --- |
+| `--path=*` | Override configured source paths to scan. |
+| `--migrations=*` | Analyze explicit migration files. |
+| `--diff` | Analyze added/modified migrations from local Git diff. |
+| `--base=HEAD` | Git base ref used with `--diff`. |
+| `--format=console\|json` | Choose human console output or machine JSON. |
+| `--strict` | Treat warnings as CI failures. |
+| `--no-cache` | Bypass SchemaGuard's optional AST cache reads and writes. |
 
 ## Caught Before Merge
 
@@ -105,6 +122,7 @@ diagnostics
 - Raw SQL evidence is capped at `HIGH` confidence and never becomes `DEFINITIVE`.
 - Dynamic SQL is reported as an indeterminate diagnostic instead of guessed.
 - SchemaGuard never executes host migrations, models, controllers, resources, routes, or database queries.
+- Phase 1 does not include a hosted PR review service, GitHub App, SaaS dashboard, multi-repository orchestration, or non-Laravel parsers.
 
 ## License
 

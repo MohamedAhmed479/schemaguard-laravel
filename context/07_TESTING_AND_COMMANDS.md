@@ -90,3 +90,12 @@ Read this before running validation or declaring a task complete. Skip it only f
 - Testbench command issues: verify `SchemaGuardServiceProvider` registers commands only when `runningInConsole()` and publishes with tag `schemaguard-config`.
 - Malformed fixture failures: parser/indexer should return safe failed results and expose diagnostics where applicable; the full suite must not crash.
 - Tests passing but context stale: source code wins; update `context/03_CURRENT_STATE.md`, `context/09_ACTIVE_WORK.md`, and any affected map/decision files.
+
+## Release Readiness Commands
+
+| Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Release |
+| --- | --- | --- | --- | --- |
+| `composer archive --format=zip --dir=build/release-audit` | Before a public release tag. | Composer export-ignore rules produce a clean package archive. | Archive contains runtime package files and excludes tests, fixtures, vendor, context, IDE/agent files, and build artifacts. | Yes. |
+| Fresh Laravel path-repository install | Before first public release and after package metadata changes. | A clean Laravel app can install and auto-discover SchemaGuard without manual provider registration. | `php artisan schemaguard:check` is registered and runs. | Yes. |
+| `php artisan vendor:publish --tag=schemaguard-config --force` in a fresh app | Before public release. | Config publishing works for consumers. | `config/schemaguard.php` exists and is valid PHP. | Yes. |
+| Fresh-app explicit migration and JSON checks | Before public release. | Real consumer CLI behavior, exit codes, and JSON output are release-safe. | BLOCK/WARNING/SAFE behavior and JSON purity match README. | Yes. |

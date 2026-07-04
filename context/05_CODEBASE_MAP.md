@@ -10,13 +10,14 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `testbench.yaml` | Testbench CLI provider registration. | Testbench command issues. | Keeps `vendor/bin/testbench schemaguard:check` deterministic outside PHPUnit. |
 | `README.md` | User-facing installation, CLI, JSON, exit-code, CI, and limitation docs. | User-facing package docs change. | Must stay honest about conservative inference and raw SQL limitations. |
 | `LICENSE.md` | MIT license. | License/package hygiene tasks. | Do not modify casually. |
-| `.gitattributes` | Composer export-ignore rules. | Package distribution hygiene. | Keep tests, parsed fixtures, `phpunit.xml.dist`, and `.gitattributes` excluded. |
+| `.gitattributes` | Composer export-ignore rules. | Package distribution hygiene. | Keep tests, fixtures, vendor, context/agent docs, planning docs, Testbench config, build artifacts, `phpunit.xml.dist`, and `.gitattributes` excluded from Composer archives. |
+| `RELEASE_CHECKLIST.md` | Reusable public-release process checklist. | Release preparation or publication tasks. | Process aid only; do not treat it as proof that a release was published. |
 
 ## Configuration
 
 | Path | Purpose | Read When | Invariants / Warnings |
 | --- | --- | --- | --- |
-| `config/schemaguard.php` | Publishable package config surface. | Config publishing, scanner config, or Testbench issues. | Some keys are future-facing; do not describe policy/CLI behavior as active until consumed by code. |
+| `config/schemaguard.php` | Publishable package config surface. | Config publishing, scanner config, or Testbench issues. | Defaults must be safe; enforce/ignore/custom examples should remain commented unless intentionally active. |
 
 ## Console
 

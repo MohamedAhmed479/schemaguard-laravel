@@ -196,3 +196,22 @@ Verification evidence:
 - `vendor/bin/phpunit --testsuite Unit`
 - `vendor/bin/phpunit`
 - `vendor/bin/phpunit --coverage-text`
+
+## Release Readiness - Local Validation
+
+Status: Verified locally; not published.
+
+- Added package discovery keywords to `composer.json`.
+- Hardened Composer export rules to exclude dev dependencies, tests, fixtures, agent/context docs, planning docs, IDE files, Testbench config, and build artifacts from archives.
+- Commented default ignore examples so fresh installs do not silently ignore host symbols.
+- Expanded README requirements/options/limitations for first-user clarity.
+- Added `RELEASE_CHECKLIST.md` for reusable release operations.
+- Verified a fresh Laravel 12 app can install the package via a local Composer path repository, auto-discover the provider, register `schemaguard:check`, publish config, return SAFE/BLOCK/WARNING verdicts, emit pure JSON, and run without a live database connection.
+
+Verification evidence:
+
+- `composer validate --strict`
+- `composer archive --format=zip --dir=build/release-audit`
+- Fresh Laravel path-repository install and command checks
+- `vendor/bin/phpunit`
+- `vendor/bin/phpunit --coverage-text`

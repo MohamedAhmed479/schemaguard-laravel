@@ -3,6 +3,15 @@
     "description": "A deployment firewall for database schema changes. Blocks destructive Laravel migrations before they reach production.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "laravel",
+        "migrations",
+        "schema",
+        "database",
+        "static-analysis",
+        "ci",
+        "deployment-safety"
+    ],
     "require": {
         "php": "^8.2",
         "illuminate/console": "^11.0 || ^12.0",

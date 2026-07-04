@@ -19,6 +19,7 @@ Read this at the start of every task. Skip it only if you just updated it in the
 | Graph/policy | Implemented and verified | `src/Graph/*`; `src/Policy/*`; graph/policy tests | Dependency paths, route exposure, decision matrix, overrides, confidence floors, exposure escalation, counts. |
 | Reporting/JSON | Implemented and verified | `src/Output/*`; `CheckCommandTest`; golden JSON fixture | Console report, JSON-only output, fatal JSON, normalized paths, golden E2E contract. |
 | README/package docs | Implemented and verified | `README.md` | Installation, usage, JSON, exit codes, CI example, and honest limitations. |
+| Release readiness | Verified locally | Fresh Laravel 12 path-repository install; Composer archive audit; `RELEASE_CHECKLIST.md` | Package not published; no release tag such as `v0.1.0` was created. |
 | Future hosted product areas | Planned - not implemented | Roadmap out-of-scope list | No GitHub App, SaaS dashboard, hosted PR service, multi-repo orchestration, ML calibration, or non-Laravel parser. |
 
 ## Acceptance Evidence
@@ -49,5 +50,7 @@ Current command evidence:
 - `vendor/bin/testbench schemaguard:check`: PASS; real pipeline output with `RESULT: SAFE`.
 - `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures`: PASS; expected `RESULT: BLOCK`, exit code 1.
 - `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures --format=json`: PASS; JSON output validated with `json_decode`, expected exit code 1.
+- Fresh Laravel install audit: PASS; Laravel 12 app installed `schemaguard/laravel` via local Composer path repository, provider auto-discovered, `schemaguard:check` registered, config published, explicit drop returned `BLOCK` exit 1, type change returned `WARNING` exit 0 and `--strict` exit 1, JSON output stayed machine-safe.
+- Composer archive audit: PASS after export-ignore hardening; archive contains runtime package files (`src/`, `config/`, `README.md`, `LICENSE.md`, `composer.json`) and excludes tests, fixtures, vendor, context, IDE/agent files, Testbench config, and build artifacts.
 
-Caveat: this Phase 6 implementation intentionally leaves uncommitted changes in the working tree. Future agents must inspect current Git state rather than relying on this snapshot.
+Caveat: release readiness was verified locally only. Publishing to Packagist, pushing tags, and creating a GitHub Release have not been performed.

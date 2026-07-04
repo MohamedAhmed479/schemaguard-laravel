@@ -106,10 +106,10 @@ return [
     */
     'ignore' => [
         'tables' => [
-            'legacy_import_staging',
+            // 'legacy_import_staging',
         ],
         'columns' => [
-            'users.deprecated_nickname',
+            // 'users.deprecated_nickname',
         ],
     ],
 
