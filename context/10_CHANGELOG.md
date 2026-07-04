@@ -250,3 +250,18 @@ Verification evidence:
 
 - `git diff --check`
 - Local YAML structure validation for `.github/ISSUE_TEMPLATE/*.yml`
+
+## Post-Release Demo Assets
+
+Status: Implemented.
+
+- Added `docs/demo/README.md` documenting the verified demo scenario and README embed snippet.
+- Added `docs/demo/blocking-a-used-column-drop.svg`, a terminal-style visual based on a real local SchemaGuard run against a temporary Laravel app.
+- Verified the demo scenario drops `users.email`, detects live Laravel model usage, reports `RESULT: BLOCK`, and returns exit code 1.
+- Kept local absolute paths out of the demo SVG.
+
+Verification evidence:
+
+- Real `php artisan schemaguard:check --migrations=... --path=app --no-ansi` run in a temporary Laravel app.
+- SVG XML validation.
+- `git diff --check`

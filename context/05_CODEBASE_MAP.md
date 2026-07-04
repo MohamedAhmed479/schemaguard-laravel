@@ -9,6 +9,7 @@ Read this when locating files for a task. Skip it if the exact file is already k
 | `composer.json` | Composer package identity, dependencies, autoload, Laravel provider discovery, scripts. | Package setup, dependency, autoload, or provider questions. | Keep package name `schemaguard/laravel`; keep PHP-Parser dependency. |
 | `testbench.yaml` | Testbench CLI provider registration. | Testbench command issues. | Keeps `vendor/bin/testbench schemaguard:check` deterministic outside PHPUnit. |
 | `README.md` | User-facing installation, CLI, JSON, exit-code, CI, and limitation docs. | User-facing package docs change. | Must stay honest about conservative inference and raw SQL limitations. |
+| `docs/demo/` | Reusable visual demo assets for README/social/docs. | Demo asset or launch presentation changes. | Assets must be based on real command output and contain no local absolute paths or invented results. |
 | `CONTRIBUTING.md` | Contributor setup, workflow, test, fixture, and release-boundary guidance. | Contributor workflow or PR expectations change. | Do not claim automated release workflows that do not exist. |
 | `SECURITY.md` | Security reporting guidance. | Security contact or vulnerability reporting process changes. | Contains a maintainer-replacement placeholder; do not invent a private email. |
 | `LICENSE.md` | MIT license. | License/package hygiene tasks. | Do not modify casually. |

@@ -14,17 +14,17 @@ Phase 1 through Phase 6 are implemented and verified. The Phase-1 product implem
 
 ## Current Task
 
-Post-release contributor and support layer.
+Post-release visual demo assets.
 
 Status: Added in this documentation-only update.
 
-The current task adds minimal GitHub issue forms, a pull request template, contributor guidance, and security reporting guidance after the public `v0.1.0` release. No product code, Composer metadata, config, tests, tags, remotes, GitHub settings, or Packagist settings should be changed.
+The current task adds a small reusable demo asset set under `docs/demo/` showing a real `RESULT: BLOCK` for a migration dropping `users.email` while Laravel code still uses it. No product code, Composer metadata, config, tests, tags, remotes, GitHub Release, or Packagist settings should be changed.
 
 ## Current Working Tree State
 
 Needs verification at the start of every new task.
 
-At the start of this contributor/support documentation task, `master` was clean and up to date with `origin/master`. `HEAD` was `96a80be docs: record v0.1.0 publication`; release tag `v0.1.0` remains on `ee9fbdfdc3beffd358b594e58f99967d331fd100`.
+At the start of this demo-asset documentation task, `master` was clean and up to date with `origin/master`. `HEAD` was `302eb06 docs: add contributor and support workflow`; release tag `v0.1.0` remains on `ee9fbdfdc3beffd358b594e58f99967d331fd100`.
 
 ## Next Safe Task
 

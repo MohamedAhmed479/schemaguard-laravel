@@ -78,6 +78,12 @@ BLOCK COLUMN_DROPPED users.phone
 RESULT: BLOCK
 ```
 
+### See it in action
+
+![SchemaGuard blocks a used column drop](docs/demo/blocking-a-used-column-drop.svg)
+
+SchemaGuard detects that `users.email` is still used by the application and blocks the destructive migration before deployment.
+
 ## Decisions and Exit Codes
 
 | Result | Meaning | Default exit code |
