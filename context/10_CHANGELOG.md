@@ -199,7 +199,7 @@ Verification evidence:
 
 ## Release Readiness - Local Validation
 
-Status: Verified locally; not published.
+Status: Implemented and verified.
 
 - Added package discovery keywords to `composer.json`.
 - Hardened Composer export rules to exclude dev dependencies, tests, fixtures, agent/context docs, planning docs, IDE files, Testbench config, and build artifacts from archives.
@@ -215,3 +215,23 @@ Verification evidence:
 - Fresh Laravel path-repository install and command checks
 - `vendor/bin/phpunit`
 - `vendor/bin/phpunit --coverage-text`
+
+## Public Release - v0.1.0
+
+Status: Published and verified.
+
+- Tagged and pushed `v0.1.0` for release commit `ee9fbdfdc3beffd358b594e58f99967d331fd100`.
+- Published GitHub Release `SchemaGuard v0.1.0` for `MohamedAhmed479/schemaguard-laravel`.
+- Packagist detected `schemaguard/laravel` version `v0.1.0` and is configured for GitHub auto-updates.
+- Verified public Composer installation from Packagist in a clean Laravel app with no path repository.
+- Verified provider auto-discovery, `schemaguard:check` command registration, config publishing, empty-app `SAFE/0`, used-drop `BLOCK/1`, type-change `WARNING/0`, strict warning `WARNING/1`, and JSON output purity.
+
+Verification evidence:
+
+- `git tag --list "v0.1.0"`
+- `composer require schemaguard/laravel:^0.1 -W` in a clean Laravel app
+- `composer show schemaguard/laravel`
+- `php artisan package:discover --ansi`
+- `php artisan list --raw`
+- `php artisan schemaguard:check`
+- `php artisan vendor:publish --tag=schemaguard-config --force`

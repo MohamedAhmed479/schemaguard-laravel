@@ -6,9 +6,9 @@ SchemaGuard is the `schemaguard/laravel` package: a deployment firewall for data
 
 ## Current Phase
 
-Status: Implemented and verified.
+Status: Implemented, verified, and publicly released.
 
-Phase 1 through Phase 6 are implemented and verified against the current source and test suite. The Phase-1 product implementation is complete. The next safe task is release preparation, packaging validation, or explicitly scoped future-product planning, after re-verifying Git state and the full test/coverage gates.
+Phase 1 through Phase 6 are implemented and verified against the current source and test suite. The Phase-1 product implementation is complete. Public release `v0.1.0` is published on GitHub and Packagist as `schemaguard/laravel`, and a clean Laravel public Packagist install verification passed. The next safe work is user feedback, bug fixes, adoption/docs polish, or explicitly scoped `v0.2.0` planning after re-verifying Git state and the relevant test/coverage gates.
 
 Agents must not begin Phase N+1 until the preceding phase's Definition of Done is green.
 

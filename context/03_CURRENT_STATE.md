@@ -19,17 +19,34 @@ Read this at the start of every task. Skip it only if you just updated it in the
 | Graph/policy | Implemented and verified | `src/Graph/*`; `src/Policy/*`; graph/policy tests | Dependency paths, route exposure, decision matrix, overrides, confidence floors, exposure escalation, counts. |
 | Reporting/JSON | Implemented and verified | `src/Output/*`; `CheckCommandTest`; golden JSON fixture | Console report, JSON-only output, fatal JSON, normalized paths, golden E2E contract. |
 | README/package docs | Implemented and verified | `README.md` | Installation, usage, JSON, exit codes, CI example, and honest limitations. |
-| Release readiness | Verified locally | Fresh Laravel 12 path-repository install; Composer archive audit; `RELEASE_CHECKLIST.md` | Package not published; no release tag such as `v0.1.0` was created. |
+| Release readiness | Implemented and verified | Fresh Laravel 12 path-repository install; Composer archive audit; `RELEASE_CHECKLIST.md` | Local release readiness passed before publication. |
+| Public release | Published and verified | GitHub release `SchemaGuard v0.1.0`; tag `v0.1.0`; Packagist `schemaguard/laravel` version `v0.1.0`; public install verification | Published from commit `ee9fbdfdc3beffd358b594e58f99967d331fd100`; Packagist auto-updates through GitHub. |
 | Future hosted product areas | Planned - not implemented | Roadmap out-of-scope list | No GitHub App, SaaS dashboard, hosted PR service, multi-repo orchestration, ML calibration, or non-Laravel parser. |
 
 ## Acceptance Evidence
 
 Last verified against current working tree: 2026-07-04.
 
+Post-release status:
+
+- Phase-1 product implementation: complete and verified.
+- Local release readiness: verified.
+- GitHub repository: `MohamedAhmed479/schemaguard-laravel`.
+- GitHub release: `SchemaGuard v0.1.0`, published.
+- Release tag: `v0.1.0`.
+- Release commit: `ee9fbdfdc3beffd358b594e58f99967d331fd100`.
+- Packagist package: `schemaguard/laravel`, published.
+- Packagist version: `v0.1.0`.
+- Packagist updates: auto-updated through GitHub.
+- Public install verification: passed in a clean Laravel app using `composer require schemaguard/laravel:^0.1 -W`; auto-discovery, config publishing, SAFE/BLOCK/WARNING behavior, JSON output, and strict warning handling were verified.
+- No installs, stars, downloads, users, or adoption counts have been verified.
+
 Current command evidence:
 
-- `git status`: PASS; current working tree contains uncommitted Phase 6 implementation, tests, fixtures, README/config, PHPUnit coverage-filter, final acceptance-audit test hardening, and context updates; no commit was created.
+- `git status`: PASS before this post-release documentation update; `master` was up to date with `origin/master` and clean.
 - `git diff --check`: PASS; no whitespace errors. Git may print LF-to-CRLF warnings on Windows.
+- `git log --oneline --decorate -8`: PASS; `HEAD -> master`, `origin/master`, and tag `v0.1.0` point to `ee9fbdf chore: prepare v0.1.0 release`.
+- `git tag --list "v0.1.0"`: PASS; `v0.1.0` exists.
 - `composer validate --strict`: PASS; `./composer.json is valid`.
 - `composer dump-autoload -o`: PASS; optimized autoload generated without PSR-4 warnings after fixture namespace cleanup.
 - `composer install`: PASS; lock file install verified, nothing to install/update/remove.
@@ -51,6 +68,5 @@ Current command evidence:
 - `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures`: PASS; expected `RESULT: BLOCK`, exit code 1.
 - `vendor/bin/testbench schemaguard:check --migrations=tests/Fixtures/migrations/2024_06_01_000000_drop_phone_from_users.php --path=tests/Fixtures --format=json`: PASS; JSON output validated with `json_decode`, expected exit code 1.
 - Fresh Laravel install audit: PASS; Laravel 12 app installed `schemaguard/laravel` via local Composer path repository, provider auto-discovered, `schemaguard:check` registered, config published, explicit drop returned `BLOCK` exit 1, type change returned `WARNING` exit 0 and `--strict` exit 1, JSON output stayed machine-safe.
+- Public Packagist install audit: PASS; a clean Laravel app installed `schemaguard/laravel v0.1.0` from the public Packagist/GitHub distribution, provider auto-discovered, `schemaguard:check` registered, config published, empty app returned `SAFE` exit 0, used dropped column returned `BLOCK` exit 1, JSON output decoded cleanly with `overall=BLOCK` and `exit_code=1`, used type change returned `WARNING` exit 0, and `--strict` returned `WARNING` exit 1.
 - Composer archive audit: PASS after export-ignore hardening; archive contains runtime package files (`src/`, `config/`, `README.md`, `LICENSE.md`, `composer.json`) and excludes tests, fixtures, vendor, context, IDE/agent files, Testbench config, and build artifacts.
-
-Caveat: release readiness was verified locally only. Publishing to Packagist, pushing tags, and creating a GitHub Release have not been performed.

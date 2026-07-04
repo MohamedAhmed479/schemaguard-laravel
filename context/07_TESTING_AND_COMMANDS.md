@@ -99,3 +99,18 @@ Read this before running validation or declaring a task complete. Skip it only f
 | Fresh Laravel path-repository install | Before first public release and after package metadata changes. | A clean Laravel app can install and auto-discover SchemaGuard without manual provider registration. | `php artisan schemaguard:check` is registered and runs. | Yes. |
 | `php artisan vendor:publish --tag=schemaguard-config --force` in a fresh app | Before public release. | Config publishing works for consumers. | `config/schemaguard.php` exists and is valid PHP. | Yes. |
 | Fresh-app explicit migration and JSON checks | Before public release. | Real consumer CLI behavior, exit codes, and JSON output are release-safe. | BLOCK/WARNING/SAFE behavior and JSON purity match README. | Yes. |
+
+## Public Install Verification
+
+Run these after publishing or when validating a published release from a real consumer app. Do not use a Composer path repository for this check.
+
+| Command | When To Run | What It Proves | Expected Outcome | Mandatory Before Claiming Publication Healthy |
+| --- | --- | --- | --- | --- |
+| `composer create-project laravel/laravel schemaguard-packagist-verification` | After Packagist detects a release. | A clean compatible Laravel app can be created independently of this repository. | New Laravel app installs successfully. | Yes for publication verification. |
+| `composer config repositories --no-plugins --no-scripts` | Before requiring SchemaGuard in the fresh app. | The app is not using a local path repository. | Only Packagist/default repositories are present. | Yes for public install verification. |
+| `composer require schemaguard/laravel:^0.1 -W` | Public install verification. | Composer resolves SchemaGuard from Packagist/GitHub distribution. | Installs `schemaguard/laravel` `v0.1.0` or compatible `0.1.x`. | Yes after publishing. |
+| `composer show schemaguard/laravel` | After public install. | Installed package metadata and version are visible to consumers. | Shows public version, source, dist, license, and package metadata. | Yes after publishing. |
+| `php artisan package:discover --ansi` and `php artisan list --raw` | After public install. | Laravel auto-discovers the provider and registers `schemaguard:check`. | Command appears without manual provider registration. | Yes after publishing. |
+| `php artisan schemaguard:check` | After public install. | Empty/fresh app runs the CLI safely. | `RESULT: SAFE`, exit code 0. | Yes after publishing. |
+| `php artisan vendor:publish --tag=schemaguard-config --force` | After public install. | Consumer config publishing works. | `config/schemaguard.php` is copied and valid PHP. | Yes after publishing. |
+| Explicit drop/type-change checks with `--format=json` and `--strict` | After public install. | Public package preserves SAFE/BLOCK/WARNING, JSON purity, and strict warning behavior. | Used drop `BLOCK/1`; JSON decodes with `overall=BLOCK`; type change `WARNING/0`; strict warning `WARNING/1`. | Yes after publishing. |
